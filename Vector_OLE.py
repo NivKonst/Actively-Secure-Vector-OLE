@@ -598,6 +598,56 @@ class VOLE:
 
 
 
+
+    #Generates a copy of the top (u rows) part of the current VOLE instance's matrix M
+    #Subjectet to the chosen rows in I
+    def M_I_top(self,I):
+        if self.bits<=64:
+            M_top_I=np.zeros((self.u,self.k),dtype=np.ulonglong);
+            for i,j,data in zip(self.M_coo.row,self.M_coo.col,self.M_coo.data):
+                if i>=self.u:
+                    break;
+                if I[i]==1:
+                    M_top_I[i,j]=data;
+            return M_top_I;
+        
+        rows_neighbors=self.M_neighbors[0];
+        data_neighbors=self.M_neighbors[1];
+        result_list=[];
+        for i in range(0,self.u):
+            result_row=[0]*self.k;
+            if I[i]==1:
+                current_row=rows_neighbors[i];
+                current_data=data_neighbors[i];
+                for j,data in zip(current_row,current_data):
+                    result_row[j]=data;
+            result_list.append(result_row);
+        return result_list;
+
+
+    #Generates a copy of the top (u rows) part of the current VOLE instance's matrix M, in neighbors representation
+    #Subjectet to the chosen rows in I
+    def M_I_top_neighbors(self,I):
+        (rows_neighbors,data_neighbors)=self.M_neighbors;
+
+        result_rows_neighbors=[];
+        result_data_neighbors=[];
+        for i in range(0,self.u):
+            current_result_row=[];
+            current_result_data=[];
+            if I[i]==1:
+                current_row=rows_neighbors[i];
+                current_data=data_neighbors[i];
+                current_result_row=current_row[:];
+                current_result_data=current_data[:];
+            result_rows_neighbors.append(current_result_row);
+            result_data_neighbors.append(current_result_data);
+        result_neighbors=(result_rows_neighbors,result_data_neighbors);
+        return result_neighbors;
+
+
+
+
     #Computes a binary vector I for the clean entries of the vector e
     #I[i]=1 iff e[i]=0.
     def anti_support(self,e):
@@ -1972,7 +2022,7 @@ class VOLE:
         return result;
 
 
-
+    #Multiply a row vector with the T matrix (ADINZ encoding matrix) of the current VOLE instance, in neighbors representation
     def vector_mult_T_neighbors(self,h): 
         left=self.vector_mult_matrix_neighbors(h,self.M_neighbors);
         h_right=h[self.u:self.m];
@@ -1984,12 +2034,15 @@ class VOLE:
             result=left+right;
         return result;
 
+
+    #Multiply a row vector with a general matrix in neighbors representation
     def vector_mult_matrix_neighbors(self,h,M_neighbors):
         if self.bits<=64:
             h_list=h.tolist();
         else:
             h_list=h;
         h_len=len(h);
+        #Maybe include the result_len in the input for generality
         result_len=self.k;
         result_list=[0]*result_len;
         rows_neighbors=M_neighbors[0];
@@ -2010,13 +2063,14 @@ class VOLE:
 
 
 
-
+    #Multiply a row vector with a general Ecc matrix (matrix of ones) in neighbors representation
     def vector_mult_Ecc_neighbors(self,h,Ecc_neighbors):  
         if self.bits<=64:
             h_list=h.tolist();
         else:
             h_list=h;
         h_len=len(h);
+        #Maybe include the result_len in the input for generality
         result_len=self.w;
         result_list=[0]*result_len;
         for i in range(0,h_len):
@@ -2035,7 +2089,7 @@ class VOLE:
 
 
 
-
+    #Multiply a sparse row vector with the T matrix (ADINZ encoding matrix) of the current VOLE instance
     def sparse_vector_mult_T(self,h,h_support):
         if self.bits>=64:
             result=self.sparse_vector_mult_T_neighbors(h,h_support);
@@ -2051,7 +2105,7 @@ class VOLE:
 
 
 
-
+    #Multiply a sparse row vector with the T matrix (ADINZ encoding matrix) of the current VOLE instance, in neighbors representation
     def sparse_vector_mult_T_neighbors(self,h,h_support):
         left=self.sparse_vector_mult_matrix_neighbors(h,h_support,self.M_neighbors);
         h_right=h[self.u:self.m];
@@ -2064,12 +2118,13 @@ class VOLE:
         return result;
 
 
-
+    #Multiply a sparse row vector with a general matrix in neighbors representation
     def sparse_vector_mult_matrix_neighbors(self,h,h_support,M_neighbors):   
         if self.bits<=64:
             h_list=h.tolist();
         else:
             h_list=h;
+        #Maybe include the result_len in the input for generality
         result_len=self.k;
         result_list=[0]*result_len;
         rows_neighbors=M_neighbors[0];
@@ -2088,12 +2143,13 @@ class VOLE:
         return result;
 
 
-
+    #Multiply a sparse row vector with a general Ecc matrix (matrix of ones) in neighbors representation
     def sparse_vector_mult_Ecc_neighbors(self,h,h_support,Ecc_neighbors):  
         if self.bits<=64:
             h_list=h.tolist();
         else:
             h_list=h;
+        #Maybe include the result_len in the input for generality
         result_len=self.w;
         result_list=[0]*result_len;
         for i in h_support:
@@ -2113,7 +2169,7 @@ class VOLE:
 
 
 
-
+    #Multiply a row vector with a general matrix in COOrdinate representation
     def vector_mult_coo_matrix(self,h,M_coo):    
         vec_len=len(h);
         result_len=M_coo.shape[1];
@@ -2131,11 +2187,20 @@ class VOLE:
 
 
 
+    #Prints message with time measurement in milliseconds
     def print_message_with_time(self,message,start,end):
         print(message+": {0:.3f}".format(1000*(end - start))+"msec");
 
 
 
+    #Prints matrix in list format
+    def print_matrix(self,mat):
+        for row in mat:
+            print(*row);
+            print();
+
+
+    #Sends a scalar through a socket connection 
     def send_scalar(self,sock,x):
         sent=sock.sendall(x.to_bytes(self.bytes,'little'));
         if sent == 0:
@@ -2143,7 +2208,7 @@ class VOLE:
         #sent=client_socket.sendall(b'Hello');
         return True;
 
-
+    #Receives a scalar through a socket connection 
     def recv_scalar(self,sock):
         x_bytes=sock.recv(self.bytes);
         if x_bytes == b'':
@@ -2155,7 +2220,7 @@ class VOLE:
         return x;
 
 
-
+    #Sends a vector through a socket connection 
     def send_vector(self,sock,v):
         if self.bits<=64:
             v_list=v.tolist();
@@ -2171,6 +2236,7 @@ class VOLE:
             return False;
         return True;
 
+    #Receives a scalar through a socket connection 
     def recv_vector(self,sock):
         size_message=sock.recv(self.packet_size);
         if size_message == b'':
@@ -2187,11 +2253,6 @@ class VOLE:
             v=v_list;
         return v;
 
-
-    def print_matrix(self,mat):
-        for row in mat:
-            print(*row);
-            print();
 
 
 
