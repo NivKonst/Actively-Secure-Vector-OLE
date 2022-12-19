@@ -1801,17 +1801,17 @@ class VOLE:
         return info;
 
 
-
+    #CDS decoder of the protocol
     def cds_decode(self,c,gamma,alpha,beta,beta_support,v):
         beta_c=self.sparse_dot_product(beta,beta_support,c);
-        t=(alpha-beta_c);#%self.fn;  #t=alpha-h[I_NOT]c=K+h[I]c
+        t=(alpha-beta_c); #t=alpha-h[I_NOT]c=Delta_X+h[I]c
         beta_T=self.sparse_vector_mult_T(beta,beta_support);
-        phi=self.sub_vectors(gamma,beta_T);
-        s=self.dot_product(phi,v);
+        phi=self.sub_vectors(gamma,beta_T); #phi=h[I]T
+        s=self.dot_product(phi,v); #s=h[I]c
         cds_secret=(t-s)%self.fn;
         return cds_secret;
 
-
+    #Adds 2 vectors over the current VOLE instance's field
     def add_vectors(self,a,b):
         if self.bits<64:
             result=(a+b)%self.fn;
@@ -1831,8 +1831,8 @@ class VOLE:
         return result;
 
 
-
-    def scalar_mult_and_add_vector(self,x,a,b):
+    #Calculates the linear transformation x*a+b over the current VOLE instance's field
+    def scalar_mult_and_add_vector_1(self,x,a,b):
         if self.bits<32:
             result=(x*a+b)%self.fn;
             return result;
@@ -1852,8 +1852,30 @@ class VOLE:
 
 
 
+    #Calculates the linear transformation x*a+b over the current VOLE instance's field
+    def scalar_mult_and_add_vector(self,x,a,b):
+        if self.bits<64:
+            result=(x*a+b)%self.fn;
+            return result;
+        if self.bits==64:
+            a_list=a.tolist();
+            b_list=b.tolist();
+        else:
+            a_list=a;
+            b_list=b;
+        result_len=len(a_list);
+        result_list=[(x*a_list[i]+b_list[i])%self.fn for i in range(0,result_len)];
+        if self.bits==64:
+            result=np.array(result_list,dtype=np.ulonglong);
+        else:
+            result=result_list;
+        return result;
 
 
+
+
+
+    #Subtracts 2 vectors over the current VOLE instance's field
     def sub_vectors(self,a,b):
         if self.bits<64:
             c=a.astype('int64');
@@ -1877,7 +1899,7 @@ class VOLE:
 
 
 
-
+    #Performs the dot product of a and b over the current VOLE instance's field  
     def dot_product(self,a,b): 
         if self.bits<32:
             result=int((a.dot(b))%self.fn);
@@ -1896,7 +1918,7 @@ class VOLE:
 
 
 
-        
+    #Performs the dot product between the sparse vector a and the vector b over the current VOLE instance's field      
     def sparse_dot_product(self,a,a_support,b):    
         if self.bits<32:
             result=int((a.dot(b))%self.fn);

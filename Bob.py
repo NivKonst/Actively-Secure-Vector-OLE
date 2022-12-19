@@ -150,8 +150,14 @@ def run(vole):
     b_tag=vole.recv_vector(client_socket);
 
     info_from_Alice=vole.scalar_mult_and_add_vector(x,a,b_tag);
-    
-    if decoded_info==info_from_Alice:
+
+    if vole.bits<128:
+        success_flag=(decoded_info==info_from_Alice).all();
+    else:
+        success_flag=(decoded_info==info_from_Alice);
+
+        
+    if success_flag:
         print("Decoding seccseeded");
     else:
         print("Decoding didn't seccseed");
@@ -183,7 +189,7 @@ def main():
     
     mu=0.25;
     d_max=10;
-    bits=128;
+    bits=64;
     u_factor=1.4;
 
     vole=VOLE(k,w,mu,d_max,bits,u_factor);

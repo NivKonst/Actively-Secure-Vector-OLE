@@ -17,20 +17,18 @@ def avg_dic(dic,devisor):
 
 
 def main():
-    repetitions=300;
+    repetitions=20;
     times_dic={};
-    adds_dic={};
-    mults_dic={};
     
-    #k=182;
-    #w=10000;
+    k=182;
+    w=10000;
 
-    k=240;
-    w=20000;
+    #k=240;
+    #w=20000;
     
     mu=0.25;
     d_max=10;
-    bits=16;
+    bits=32;
     u_factor=1.4;
 
 
@@ -45,21 +43,13 @@ def main():
     
     for i in range(1,repetitions+1):
         print("Test {0}".format(i));
-        (current_times,current_adds,current_mults)=Alice.run(vole);
+        current_times=Alice.run(vole);
         sum_dict_into_dict(times_dic,current_times);
-        sum_dict_into_dict(adds_dic,current_adds);
-        sum_dict_into_dict(mults_dic,current_mults);
         print();
         time.sleep(7);
     avg_dic(times_dic,repetitions);
-    avg_dic(adds_dic,repetitions);
-    avg_dic(mults_dic,repetitions);
     print("Avarage Times:");
     print(times_dic);
-    print("Avarage additions number:");
-    print(adds_dic);
-    print("Avarage multiplications number:");
-    print(mults_dic);
 
 
 if __name__ == "__main__":
