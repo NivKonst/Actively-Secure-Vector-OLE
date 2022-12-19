@@ -390,7 +390,8 @@ class VOLE:
         
         
         
-    #maybe also update m,k,v and u
+    #Sets the current VOLE instance's matrix by a given matrix in neighbors representation
+    #To update: check dimensions of the matrix and change m and k accordingly
     def set_matrix_by_neighbors(self,M_neighbors):
         self.M_csr=None;
         self.M_coo=None;
@@ -403,6 +404,7 @@ class VOLE:
         self.M_neighbors=(rows_neighbors_copy,data_neighbors_copy);
 
 
+    #Transforms a matrix in list representation into a neighbors representation
     def matrix_list_to_neighbors(self,M_list):
         rows_neighbors=[];
         data_neighbors=[];
@@ -423,7 +425,7 @@ class VOLE:
 
 
 
-
+    #Decomposes a matrix in coo representation into 2 matrices of high and low bits
     def decompose_coo_matrix_to_HL(self,M_coo):
         rows=M_coo.shape[0];
         cols=M_coo.shape[1];
@@ -433,34 +435,31 @@ class VOLE:
             M_H[i,j]=int(data)>>self.factor_H;
             M_L[i,j]=int(data)&self.factor_L;
         M_HL_tuple=(csr_matrix(M_H),csr_matrix(M_L));
-        #M_HL_tuple=(coo_matrix(M_H),coo_matrix(M_L));
         return M_HL_tuple;
 
 
 
-
+    #Reads an Ecc matrix from a file and set it as the curent VOLE instance's Ecc
     def read_ecc_from_file(self,file_name):
         self.Ecc_csr=load_npz(file_name);
         self.Ecc_coo=coo_matrix(self.Ecc_csr);
-        t=self.ecc_coo_matrix_to_neighbors(self.Ecc_coo);
-        #t=(Ecc_neighbors,neighbors_degs,symbols_locations,deg_one_queue);
-        self.Ecc_neighbors=t[0];
-        self.Ecc_decoding_tuple=(t[1],t[2],t[3]);
+        tupl=self.ecc_coo_matrix_to_neighbors(self.Ecc_coo);
+        self.Ecc_neighbors=tupl[0];
+        self.Ecc_decoding_tuple=(tupl[1],tupl[2],tupl[3]);
         self.Ecc_tuple=(self.Ecc_coo,self.Ecc_csr,self.Ecc_neighbors,self.Ecc_decoding_tuple);
         return self.Ecc_tuple;
 
 
 
 
-
+    #Transforms an Ecc matrix in coo representation into a neighbors representation
+    #Calculates data for the Ecc decoding
     def ecc_coo_matrix_to_neighbors(self,Ecc_coo):
         rows=Ecc_coo.shape[0];
         cols=Ecc_coo.shape[1];
         Ecc_neighbors=[];
         symbols_locations=[[] for i in range(0,cols)];
-        #symbols_dict = {x: []for x in range(Ecc_coo.shape[1])};
         neighbors_degs=[0]*rows;
-        #neighbors_degs_dict={x:0 for x in range(rows)};
         deg_one_queue=queue.Queue();
         current_row_index=0;
         current_row_list=[];
@@ -469,26 +468,24 @@ class VOLE:
                 Ecc_neighbors.append(current_row_list);
                 current_row_len=len(current_row_list);
                 neighbors_degs[current_row_index]=current_row_len;
-                #neighbors_degs_dict[current_row_index]=current_row_len;
                 if current_row_len==1:
                     deg_one_queue.put(current_row_index);
+                #If deg can be zero:
                 #for h in range(current_row_index+1,i):
-                #    Ecc_neighbors.append([]); #WHY DEG CAN BE 0?
+                #    Ecc_neighbors.append([]); 
                 current_row_index=i;
                 current_row_list=[];        
             current_row_list.append(j);
             symbols_locations[j].append(current_row_index);
         Ecc_neighbors.append(current_row_list);
         current_row_len=len(current_row_list);
-        #neighbors_degs_dict[current_row_index]=current_row_len;
         neighbors_degs[current_row_index]=current_row_len;
         if current_row_len==1:
             deg_one_queue.put(current_row_index);
-        #sorted_neighbors_degs_dict=dict(sorted(neighbors_degs_dict.items(),key=lambda t: t[1]));
         return (Ecc_neighbors,neighbors_degs,symbols_locations,deg_one_queue);
-        #return Ecc_neighbors;
         
 
+    #Transforms a matrix in coo representation into a neighbors representation
     def coo_matrix_to_matrix_neighbors(self,M_coo):
         rows_neighbors=[];
         data_neighbors=[];
@@ -516,7 +513,8 @@ class VOLE:
 
 
 
-
+    #Computes a binary vector I for the clean entries of the vector e
+    #I[i]=1 iff e[i]=0.
     def anti_support(self,e):
         e_len=len(e);
         I=[0]*e_len;
@@ -524,8 +522,10 @@ class VOLE:
             if e[i]==0:
                 I[i]=1;
         return I;
+
+
     
-        
+    #Generates a random vector according to the given size
     def random_vector(self,size):
         result_list=[random.randint(0,self.fn-1) for i in range(0,size)];
         if(self.bits<=64):
@@ -534,6 +534,8 @@ class VOLE:
             result=result_list;
         return result;
 
+
+    #Generates a random 
     def random_mu_vector(self,size,mu):
         if(self.bits<=64):
             result=np.zeros(size,dtype=np.ulonglong);
