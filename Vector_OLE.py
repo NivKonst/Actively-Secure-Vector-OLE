@@ -203,25 +203,8 @@ class VOLE:
 
 
 
-
-
-    #Calculates the Matrix-Vector multiplication for a general matrix
-    def matrix_mult_vector(self,matrix_tuple,r):
-        (matrix_coo,matrix_csr,matrix_neighbors,matrix_HL_tuple)=matrix_tuple;
-        if self.bits>=64:
-            M_r=self.matrix_neighbors_mult_vector(matrix_neighbors,r);
-        elif self.bits==32:
-            M_r=self.matrix_HL_mult_vector(matrix_HL_tuple,r);
-        else:
-            M_r=(matrix_csr.dot(r))%self.fn;
-        return M_r;
-
-
-
-
-
     #Calculates the Matrix-Vector multiplication for the matrix M of the current Vole instance
-    #subjected to the rows chosen in I
+    #subjected to the chosen rows in I
     def M_I_mult_vector(self,r,I):
         result_len=len(self.M_neighbors[0]);
         if self.bits>=64:
@@ -240,7 +223,7 @@ class VOLE:
 
 
     #Calculates the Matrix-Vector multiplication for the bottom part matrix of M of the current Vole instance
-    #subjected to the rows chosen in I
+    #subjected to the chosen rows in I
     def M_bottom_I_mult_vector(self,r,I):
         if self.bits>=64:
             M_bottom_I_r=self.matrix_neighbors_mult_vector_I(self.M_bottom_neighbors,r,I);
@@ -256,7 +239,21 @@ class VOLE:
 
 
     #Calculates the Matrix-Vector multiplication for a general matrix
-    #subjected to the rows chosen in I
+    def matrix_mult_vector(self,matrix_tuple,r):
+        (matrix_coo,matrix_csr,matrix_neighbors,matrix_HL_tuple)=matrix_tuple;
+        if self.bits>=64:
+            M_r=self.matrix_neighbors_mult_vector(matrix_neighbors,r);
+        elif self.bits==32:
+            M_r=self.matrix_HL_mult_vector(matrix_HL_tuple,r);
+        else:
+            M_r=(matrix_csr.dot(r))%self.fn;
+        return M_r;
+
+
+
+
+    #Calculates the Matrix-Vector multiplication for a general matrix
+    #subjected to the chosen rows in I
     def matrix_mult_vector_I(self,matrix_tuple,r,I):
         (matrix_coo,matrix_csr,matrix_neighbors,matrix_HL_tuple)=matrix_tuple;
         result_len=len(matrix_neighbors);
@@ -271,6 +268,100 @@ class VOLE:
             M_I_r_list=[M_r[i]%self.fn if I[i]==1 else 0 for i in range(0,result_len)];
             M_I_r=np.array(M_I_r_list,dtype=np.ulonglong);
         return M_I_r;
+
+
+
+
+    #Calculates the Matrix-Vector multiplication for a general matrix in neighbors representation
+    def matrix_neighbors_mult_vector(self,M_neighbors,r):
+        rows_neighbors=M_neighbors[0];
+        data_neighbors=M_neighbors[1];
+        result_len=len(rows_neighbors);
+        if self.bits<=64:
+            r_list=r.tolist();
+            result=np.zeros(result_len,dtype=np.ulonglong);
+        else:
+            r_list=r;
+            result=[0]*result_len;
+
+        for i in range(0,result_len):
+            current_row=rows_neighbors[i];
+            current_data=data_neighbors[i]
+            current_result=0;
+            current_result=sum(data*r_list[col] for col,data in zip(current_row,current_data) if r_list[col]!=0);
+            result[i]=current_result%self.fn;
+        return result;
+
+    #Calculates the Matrix-Vector multiplication for a general matrix in neighbors representation
+    #subjected to the chosen rows in I
+    def matrix_neighbors_mult_vector_I(self,M_neighbors,r,I):
+        func_name='matrix_neighbors_mult_vector_I';
+        rows_neighbors=M_neighbors[0];
+        data_neighbors=M_neighbors[1];
+        result_len=len(rows_neighbors);
+        if self.bits<=64:
+            r_list=r.tolist();
+            result=np.zeros(result_len,dtype=np.ulonglong);
+        else:
+            r_list=r;
+            result=[0]*result_len;
+        for i in range(0,result_len):
+            if(I[i]==1):
+                current_row=rows_neighbors[i];
+                current_data=data_neighbors[i]
+                current_result=0;
+                for col,data in zip(current_row,current_data):
+                    current_result+=data*r_list[col];
+                result[i]=current_result%self.fn;
+        return result;
+
+    #Calculates the Matrix-Vector multiplication for a general matrix in  COOrdinate representation
+    def coo_matrix_mult_vector(self,M_coo,r):
+        r_list=r.tolist();
+        rows=M_coo.shape[0];
+        result=np.zeros(rows,dtype=np.ulonglong);
+        prev_i=0;
+        current_result=0;
+        for i,j,data in zip(M_coo.row,M_coo.col,M_coo.data):
+            if i!=prev_i:
+                result[prev_i]=current_result%self.fn;
+                current_result=0
+                prev_i=i;
+            r_j=r_list[j];
+            if r_j!=0:
+                current_result=current_result+int(data)*r_j;
+        result[i]=current_result%self.fn;    
+        return result;
+
+    def coo_matrix_mult_vector_I(self,M_coo,r,I):
+        r_list=r.tolist();
+        rows=M_coo.shape[0];
+        result=np.zeros(rows,dtype=np.ulonglong);
+        prev_i=0;
+        current_result=0;
+        for i,j,data in zip(M_coo.row,M_coo.col,M_coo.data):
+            if i!=prev_i:
+                result[prev_i]=current_result%self.fn;
+                current_result=0
+                prev_i=i;
+            if I[i]==1:
+                current_result=current_result+int(data)*r_list[j];
+        result[i]=current_result%self.fn;    
+        return result;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     #Calculates the Matrix-Vector multiplication for the matrix M of the current Vole instance
@@ -425,7 +516,7 @@ class VOLE:
 
 
 
-    #Decomposes a matrix in coo representation into 2 matrices of high and low bits
+    #Decomposes a matrix in COOrdinate representation into 2 matrices of high and low bits
     def decompose_coo_matrix_to_HL(self,M_coo):
         rows=M_coo.shape[0];
         cols=M_coo.shape[1];
@@ -452,7 +543,7 @@ class VOLE:
 
 
 
-    #Transforms an Ecc matrix in coo representation into a neighbors representation
+    #Transforms an Ecc matrix in  COOrdinate representation into a neighbors representation
     #Calculates data for the Ecc decoding
     def ecc_coo_matrix_to_neighbors(self,Ecc_coo):
         rows=Ecc_coo.shape[0];
@@ -485,7 +576,7 @@ class VOLE:
         return (Ecc_neighbors,neighbors_degs,symbols_locations,deg_one_queue);
         
 
-    #Transforms a matrix in coo representation into a neighbors representation
+    #Transforms a matrix in  COOrdinate representation into a neighbors representation
     def coo_matrix_to_matrix_neighbors(self,M_coo):
         rows_neighbors=[];
         data_neighbors=[];
@@ -535,7 +626,7 @@ class VOLE:
         return result;
 
 
-    #Generates a random 
+    #Generates a random vector of the given size with density fraction of mu
     def random_mu_vector(self,size,mu):
         if(self.bits<=64):
             result=np.zeros(size,dtype=np.ulonglong);
@@ -548,7 +639,8 @@ class VOLE:
         return result;
 
 
-
+    #Generates a pseudorandom vector acording to the LPN assumption
+    #With the current VOLE instance's matrix
     def pseudorandom_vector(self,r,e,e_support):
         M_r=self.M_mult_vector(r);
         if self.bits<64:
@@ -563,10 +655,10 @@ class VOLE:
             M_r[i]=(M_r_list[i]+e_list[i])%self.fn;
         return M_r;
 
+
+    #Computes the Ecc of the current VOLE instance on a vector a
     def ecc(self,a):
         if self.bits==64:
-            #Ecc_a=luby_encode(Ecc_neighbors,a,add_dic);
-            #Ecc_a=self.Ecc_matrix_vector_HL(Ecc_coo,a);
             Ecc_a=self.Ecc_matrix_mult_vector_HL(self.Ecc_csr,a);
             return Ecc_a;
         if self.bits<64:
@@ -576,10 +668,9 @@ class VOLE:
         return Ecc_a;
 
 
-
+    #Calculates the Matrix-Vector multiplication for current VOLE instane's Ecc matrix (matrix of ones)
+    #decomposed to high and low bits matrices
     def Ecc_matrix_mult_vector_HL(self,Ecc,a):
-        #Ecc_csr=csr_matrix(Ecc_coo);
-
         (a_H,a_L)=self.decompose_vector_high_low(a);
         result_len=Ecc.shape[0];
 
@@ -588,95 +679,12 @@ class VOLE:
         vH_list=vH.tolist();
         vL_list=vL.tolist();
 
-        #result_list=[(self.factor_HL*vH_list[i]+vL_list[i])%self.fn for i in range(0,result_len)];
-        #result=np.array(result_list,dtype=np.ulonglong);
         result=np.zeros(result_len,dtype=np.ulonglong);
         for i in range(0,result_len):
             result[i]=(self.factor_HL*vH_list[i]+vL_list[i])%self.fn;
         return result;
 
 
-
-
-    def matrix_neighbors_mult_vector(self,M_neighbors,r):
-        rows_neighbors=M_neighbors[0];
-        data_neighbors=M_neighbors[1];
-        result_len=len(rows_neighbors);
-        if self.bits<=64:
-            r_list=r.tolist();
-            result=np.zeros(result_len,dtype=np.ulonglong);
-        else:
-            r_list=r;
-            result=[0]*result_len;
-
-        for i in range(0,result_len):
-            current_row=rows_neighbors[i];
-            current_data=data_neighbors[i]
-            current_result=0;
-            #counter=0;
-            current_result=sum(data*r_list[col] for col,data in zip(current_row,current_data) if r_list[col]!=0);
-            #for col,data in zip(current_row,current_data):
-            #    if r_list[col]!=0:
-            #        current_result+=data*r_list[col];
-            #        additions_counter+=1;
-            #        multiplications_counter+=1
-            result[i]=current_result%self.fn;
-        return result;
-
-    def matrix_neighbors_mult_vector_I(self,M_neighbors,r,I):
-        func_name='matrix_neighbors_mult_vector_I';
-        rows_neighbors=M_neighbors[0];
-        data_neighbors=M_neighbors[1];
-        result_len=len(rows_neighbors);
-        if self.bits<=64:
-            r_list=r.tolist();
-            result=np.zeros(result_len,dtype=np.ulonglong);
-        else:
-            r_list=r;
-            result=[0]*result_len;
-        for i in range(0,result_len):
-            if(I[i]==1):
-                current_row=rows_neighbors[i];
-                current_data=data_neighbors[i]
-                current_result=0;
-                for col,data in zip(current_row,current_data):
-                    current_result+=data*r_list[col];
-                result[i]=current_result%self.fn;
-        return result;
-
-
-    def coo_matrix_mult_vector(self,M_coo,r):
-        r_list=r.tolist();
-        rows=M_coo.shape[0];
-        result=np.zeros(rows,dtype=np.ulonglong);
-        prev_i=0;
-        current_result=0;
-        for i,j,data in zip(M_coo.row,M_coo.col,M_coo.data):
-            if i!=prev_i:
-                result[prev_i]=current_result%self.fn;
-                current_result=0
-                prev_i=i;
-            r_j=r_list[j];
-            if r_j!=0:
-                current_result=current_result+int(data)*r_j;
-        result[i]=current_result%self.fn;    
-        return result;
-
-    def coo_matrix_mult_vector_I(self,M_coo,r,I):
-        r_list=r.tolist();
-        rows=M_coo.shape[0];
-        result=np.zeros(rows,dtype=np.ulonglong);
-        prev_i=0;
-        current_result=0;
-        for i,j,data in zip(M_coo.row,M_coo.col,M_coo.data):
-            if i!=prev_i:
-                result[prev_i]=current_result%self.fn;
-                current_result=0
-                prev_i=i;
-            if I[i]==1:
-                current_result=current_result+int(data)*r_list[j];
-        result[i]=current_result%self.fn;    
-        return result;
 
 
     def luby_encode(self,Ecc_neighbors,a):
