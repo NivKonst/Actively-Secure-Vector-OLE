@@ -783,7 +783,7 @@ class VOLE:
 
 
     #Generates a list of instruction to the solution of d=M*s
-    #for a general d
+    #for a general vector d
     def offline_gaussian_elimination(self,M):
         rows=M.shape[0];
         cols=M.shape[1];
@@ -834,8 +834,8 @@ class VOLE:
 
 
 
+    #Performs the LU decomposition to M
     def offline_gaussian_elimination_LU(self,M):
-        func_name='offline_gaussian_elimination_LU';
         if self.bits<=64:
             rows=M.shape[0];
             cols=M.shape[1];
@@ -846,28 +846,15 @@ class VOLE:
             M_list=M;
             
 
-        permutation_vector=list(range(0,rows));
+        row_permutation_vector=list(range(0,rows));
 
         for j in range(0,cols):
             #pivot is the first non zero in the column
             gen=(i for i in range(j,rows) if M_list[i][j]!=0);
             pivot=next(gen,None);
             if pivot==None:
-                return None;
+                return None;                    
 
-            #pivot is the max non zero in the column
-            #cur_max=0;
-            #cur_max_index=-1;
-            #for i in range(j,rows):
-            #    if M_list[i][j]>cur_max:
-            #        cur_max=M_list[i][j];
-            #        cur_max_index=i;
-            #if cur_max_index==-1:
-            #    return None;
-            #pivot=cur_max_index;
-                    
-
-            #prev_pivot=j;
             if pivot!=j:
                 #temp=M_list[j][j:cols];
                 #M_list[j][j:cols]=M_list[pivot][j:cols];
@@ -877,11 +864,9 @@ class VOLE:
                 M_list[pivot]=temp;
         
 
-                temp=permutation_vector[j];
-                permutation_vector[j]=permutation_vector[pivot];
-                permutation_vector[pivot]=temp;
-
-                #prev_pivot=pivot;
+                temp=row_permutation_vector[j];
+                row_permutation_vector[j]=row_permutation_vector[pivot];
+                row_permutation_vector[pivot]=temp;
                 pivot=j;
             #Here pivot=j
             if j<cols-1:
@@ -899,13 +884,14 @@ class VOLE:
             LU_matrix=np.array(M_list,dtype=np.ulonglong);
         else:
             LU_matrix=M_list;
-        p=np.array(permutation_vector);
+        p=np.array(row_permutation_vector);
         return (LU_matrix,p);
 
 
 
 
-    
+    #Performs the PLUQ decomposition to M
+    #if diag=True - performs partial pivoting where rows are sorted by increasing pivot's positions
     def sparse_PLUQ_decomposition(self,M_neighbors,matrix_cols,initial_rows_permutation,initial_cols_permutation,diag):
 
         rows_neighbors=M_neighbors[0];
@@ -920,7 +906,6 @@ class VOLE:
         U_cols=U_rows;
 
         LU_matrix_list=[[0]*U_cols for i in range(0,U_rows)];
-        #LU_rows_neighbors=[[] for i in range(0,U_rows)];
 
 
         if diag:
@@ -2233,33 +2218,10 @@ class VOLE:
 
 
 
-    def matrix_top_I_compressed(self,M_neighbors,I_top,matrix_cols):
-        top_rows=len(I_top);
-        M_top_I=np.zeros((top_rows,matrix_cols),dtype=np.ulonglong);
-        hamming_weight=0;
-        current_row_index=0;
-        rows_neighbors=M_neighbors[0];
-        data_neighbors=M_neighbors[1];
-        for i in range(0,top_rows):
-            if I_top[i]==1:
-                matrix_row=rows_neighbors[i];
-                matrix_row_data=data_neighbors[i];
-                for j,data in zip(matrix_row,matrix_row_data):
-                    M_top_I[current_row_index,j]=data;
-                current_row_index+=1;
-        return M_top_I[0:current_row_index];
 
 
 
-
-
-            
-
-
-
-
-
-
+    #Executes the receiver oblivious transfer extensions algorithm
     def receiver_oblivious_transfer(self,num_of_OTs,choices,bits,ip_addr,port,times):
         print("Receiver starts OT");
         start=time.time();
@@ -2270,7 +2232,7 @@ class VOLE:
         return ot_outputs_list;
 
 
-
+    #Executes the sender oblivious transfer extensions algorithm
     def sender_oblivious_transfer(self,num_of_OTs,ot_0_inputs,ot_1_inputs,bits,ip_addr,port,times):
         print("Sender starts OT");
         if self.bits<=64:
