@@ -20,9 +20,10 @@ fn_128=340282366920938463463374607431768211297;
 fn_64=18446744073709551253;
 fn_32=4294967291;
 fn_16=65521;
-packet_size=4;
 
 class VOLE:
+
+    #Initialization of a VOLE instance
     def __init__(self,k,w,mu,dmax,bits,u_factor):
         self.k=k;
         self.w=w;
@@ -53,12 +54,15 @@ class VOLE:
         elif self.bits==128:
             self.fn=fn_128;
         self.bytes=self.bits//8;
+        self.packet_size=4;
         self.factor_H=bits//2;
         self.factor_L=2**(self.factor_H)-1;
         self.factor_HL=self.factor_L+1;
         self.factor_HL_squared=self.factor_HL**2;
         #self.F=galois.GF(self.fn);
         self.print_parameters();
+
+
 
     #Prints the parameters of the current VOLE instance
     def print_parameters(self):
@@ -98,19 +102,15 @@ class VOLE:
 
 
     #Generates a random d-sparse matrix of dimentions rows X cols
-    def random_d_sparse_matrix(self,rows,cols,dmax):
+    def random_d_sparse_matrix(self,rows,cols,d):
         if self.bits<=64:
             M=np.zeros((rows,cols),dtype=np.ulonglong);
         else:
             M=[[0]*cols for i in range(0,rows)];
         indices=list(range(0,cols));
-        counter=0;
         for i in range(0,rows):
-            sampled_indices=random.sample(indices,dmax);
-            if i in sampled_indices:
-                counter+=1;
+            sampled_indices=random.sample(indices,d);
             for j in sampled_indices:
-                #M[i][j]=random.randint(0,self.fn-1);
                 M[i][j]=random.randint(1,self.fn-1);
         return M;
 
@@ -120,12 +120,11 @@ class VOLE:
     #Generates a Luby encoder represented as a matrix of ones, with dimensions code_len X info_len
     def luby_encoder(self,code_len,info_len):
         indices=list(range(0,info_len));
-        #Ecc=lil_matrix((code_len,info_len),dtype=np.uint8);
         Ecc=np.zeros((code_len,info_len),dtype=np.uint8);
         dist=self.robust_soliton_distribution(info_len);
         for i in range(0,code_len):
-            d=self.sample_by_distribution(dist);
-            sampled_indices=random.sample(indices,d);
+            deg=self.sample_by_distribution(dist);
+            sampled_indices=random.sample(indices,deg);
             for index in sampled_indices:
                 Ecc[i,index]=1;
         return Ecc;
@@ -167,8 +166,6 @@ class VOLE:
             beta+=dist[i];
         for i in range(0,rang):
             dist[i]*=(1/beta);
-        #β=beta;
-        #print("β={0}".format(β));
         print("β={0}".format(beta));
         """expected=0;
         for i in range(0,rang):
@@ -180,6 +177,7 @@ class VOLE:
         return cdf;
     
 
+    #Decompose vector into vectors of high bits and low bits 
     def decompose_vector_high_low(self,v):
         v_list=v.tolist();
         v_len=len(v_list);
@@ -193,29 +191,111 @@ class VOLE:
 
 
 
-
+    #Calculates the Matrix-Vector multiplication for the matrix M of the current Vole instance 
     def M_mult_vector(self,r):
         if self.bits>=64:
-            M_r=self.matrix_neighbors_mult_vector(self.M_neighbors,r);#,add_dic,mult_dic);
-            #M_r=self.M_mult_vector_threading(r);
+            M_r=self.matrix_neighbors_mult_vector(self.M_neighbors,r);
         elif self.bits==32:
             M_r=self.matrix_HL_mult_vector(self.M_HL_tuple,r);
         elif self.bits==16:
-            #M_csr=csr_matrix(M_coo);
-            #M_csr=M_coo.tocsr();
-            #M_csc=M_coo.tocsc();
             M_r=(self.M_csr.dot(r))%self.fn;
-            #M_r=(M_csc.dot(r))%self.fn;
-            #M_r=(M_coo.dot(r))%self.fn;            
         return M_r;
 
 
 
 
 
+    #Calculates the Matrix-Vector multiplication for a general matrix
+    def matrix_mult_vector(self,matrix_tuple,r):
+        (matrix_coo,matrix_csr,matrix_neighbors,matrix_HL_tuple)=matrix_tuple;
+        if self.bits>=64:
+            M_r=self.matrix_neighbors_mult_vector(matrix_neighbors,r);
+        elif self.bits==32:
+            M_r=self.matrix_HL_mult_vector(matrix_HL_tuple,r);
+        else:
+            M_r=(matrix_csr.dot(r))%self.fn;
+        return M_r;
 
 
 
+
+
+    #Calculates the Matrix-Vector multiplication for the matrix M of the current Vole instance
+    #subjected to the rows chosen in I
+    def M_I_mult_vector(self,r,I):
+        result_len=len(self.M_neighbors[0]);
+        if self.bits>=64:
+            M_I_r=self.matrix_neighbors_mult_vector_I(self.M_neighbors,r,I);
+        elif self.bits==32:
+            M_r=self.matrix_HL_mult_vector(self.M_HL_tuple,r);
+            M_I_r_list=[M_r[i] if I[i]==1 else 0 for i in range(0,result_len)];
+            M_I_r=np.array(M_I_r_list,dtype=np.ulonglong);
+        else:
+            M_r=self.M_csr.dot(r)%self.fn;
+            M_I_r_list=[M_r[i] if I[i]==1 else 0 for i in range(0,result_len)];
+            M_I_r=np.array(M_I_r_list,dtype=np.ulonglong);
+        return M_I_r;
+
+
+
+
+    #Calculates the Matrix-Vector multiplication for the bottom part matrix of M of the current Vole instance
+    #subjected to the rows chosen in I
+    def M_bottom_I_mult_vector(self,r,I):
+        if self.bits>=64:
+            M_bottom_I_r=self.matrix_neighbors_mult_vector_I(self.M_bottom_neighbors,r,I);
+            return M_bottom_I_r;
+        if self.bits==32:
+            M_r=self.matrix_HL_mult_vector(self.M_HL_tuple,r);
+        else:
+            M_r=self.M_csr.dot(r)%self.fn;
+        M_bottom_I_r_list=[M_r[i] if I[i-self.u]==1 else 0 for i in range(self.u,self.m)];
+        M_bottom_I_r=np.array(M_bottom_I_r_list,dtype=np.ulonglong);
+        return M_bottom_I_r;
+
+
+
+    #Calculates the Matrix-Vector multiplication for a general matrix
+    #subjected to the rows chosen in I
+    def matrix_mult_vector_I(self,matrix_tuple,r,I):
+        (matrix_coo,matrix_csr,matrix_neighbors,matrix_HL_tuple)=matrix_tuple;
+        result_len=len(matrix_neighbors);
+        if self.bits>=64:
+            M_I_r=self.matrix_neighbors_mult_vector_I(matrix_neighbors,r,I);
+        elif self.bits==32:
+            M_r=self.matrix_HL_mult_vector(matrix_HL_tuple,r);
+            M_I_r_list=[M_r[i] if I[i]==1 else 0 for i in range(0,result_len)];
+            M_I_r=np.array(M_I_r_list,dtype=np.ulonglong);
+        else:
+            M_r=matrix_csr.dot(r);
+            M_I_r_list=[M_r[i]%self.fn if I[i]==1 else 0 for i in range(0,result_len)];
+            M_I_r=np.array(M_I_r_list,dtype=np.ulonglong);
+        return M_I_r;
+
+
+    #Calculates the Matrix-Vector multiplication for the matrix M of the current Vole instance
+    #decomposed to high and low bits matrices
+    def matrix_HL_mult_vector(self,M_HL_tuple,r):
+        (M_H,M_L)=M_HL_tuple;
+        (r_H,r_L)=self.decompose_vector_high_low(r);
+        result_len=M_H.shape[0];
+        vHH=(M_H.dot(r_H));
+        vHL=(M_H.dot(r_L));
+        vLH=(M_L.dot(r_H));
+        vLL=(M_L.dot(r_L));
+        vHL_LH=vHL+vLH;
+        vHH_list=vHH.tolist();
+        vLL_list=vLL.tolist();
+        vHL_LH_list=vHL_LH.tolist();
+
+        result_list=[(self.factor_HL_squared*vHH_list[i]+self.factor_HL*vHL_LH_list[i]+vLL_list[i])%self.fn for i in range(0,result_len)];
+        result=np.array(result_list,dtype=np.ulonglong);
+        return result;
+
+
+
+
+    #Multiplies 2 matrices in lists represantations, prints the number of arithmetic operations
     def matrix_mult_matrix_list(self,A_list,B_list):
         adds_counter=0;
         mults_counter=0;
@@ -245,109 +325,18 @@ class VOLE:
 
 
 
-
-    def matrix_mult_vector(self,matrix_tuple,r):
-        (matrix_coo,matrix_csr,matrix_neighbors,matrix_HL_tuple)=matrix_tuple;
-        if self.bits>=64:
-            M_r=self.matrix_neighbors_mult_vector(matrix_neighbors,r);#,add_dic,mult_dic);
-        elif self.bits==32:
-            M_r=self.matrix_HL_mult_vector(matrix_HL_tuple,r);
-        else:
-            M_r=(matrix_csr.dot(r))%self.fn;
-        return M_r;
-
-
-
-
-
-
-
-
-
-    def M_I_mult_vector(self,r,I):
-        result_len=len(self.M_neighbors[0]);
-        if self.bits>=64:
-            M_I_r=self.matrix_neighbors_mult_vector_I(self.M_neighbors,r,I);#,add_dic,mult_dic);
-        elif self.bits==32:
-            M_r=self.matrix_HL_mult_vector(self.M_HL_tuple,r);
-            M_I_r_list=[M_r[i] if I[i]==1 else 0 for i in range(0,result_len)];
-            M_I_r=np.array(M_I_r_list,dtype=np.ulonglong);
-        else:
-            M_r=self.M_csr.dot(r)%self.fn;
-            M_I_r_list=[M_r[i] if I[i]==1 else 0 for i in range(0,result_len)];
-            M_I_r=np.array(M_I_r_list,dtype=np.ulonglong);
-        return M_I_r;
-
-
-
-
-
-    def M_bottom_I_mult_vector(self,r,I):
-        if self.bits>=64:
-            M_bottom_I_r=self.matrix_neighbors_mult_vector_I(self.M_bottom_neighbors,r,I);#,add_dic,mult_dic);
-            return M_bottom_I_r;
-        if self.bits==32:
-            M_r=self.matrix_HL_mult_vector(self.M_HL_tuple,r);
-        else:
-            M_r=self.M_csr.dot(r)%self.fn;
-        M_bottom_I_r_list=[M_r[i] if I[i-self.u]==1 else 0 for i in range(self.u,self.m)];
-        M_bottom_I_r=np.array(M_bottom_I_r_list,dtype=np.ulonglong);
-        return M_bottom_I_r;
-
-    
-    def matrix_mult_vector_I(self,matrix_tuple,r,I):
-        (matrix_coo,matrix_csr,matrix_neighbors,matrix_HL_tuple)=matrix_tuple;
-        result_len=len(matrix_neighbors);
-        if self.bits>=64:
-            M_I_r=self.matrix_neighbors_mult_vector_I(matrix_neighbors,r,I);#,add_dic,mult_dic);
-        elif self.bits==32:
-            M_r=self.matrix_HL_mult_vector(matrix_HL_tuple,r);
-            M_I_r_list=[M_r[i] if I[i]==1 else 0 for i in range(0,result_len)];
-            M_I_r=np.array(M_I_r_list,dtype=np.ulonglong);
-        else:
-            M_r=self.matrix_csr.dot(r);
-            #M_I_r_list=[(M_r[i]*I[i])%self.fn for i in range(0,result_len)];
-            M_I_r_list=[M_r[i]%self.fn if I[i]==1 else 0 for i in range(0,result_len)];
-            M_I_r=np.array(M_I_r_list,dtype=np.ulonglong);
-        return M_I_r;
-
-
-    def matrix_HL_mult_vector(self,M_HL_tuple,r):
-        (M_H,M_L)=M_HL_tuple;
-        (r_H,r_L)=self.decompose_vector_high_low(r);
-        result_len=M_H.shape[0];
-        vHH=(M_H.dot(r_H));
-        vHL=(M_H.dot(r_L));
-        vLH=(M_L.dot(r_H));
-        vLL=(M_L.dot(r_L));
-        vHL_LH=vHL+vLH;
-        vHH_list=vHH.tolist();
-        vLL_list=vLL.tolist();
-        vHL_LH_list=vHL_LH.tolist();
-
-        result_list=[(self.factor_HL_squared*vHH_list[i]+self.factor_HL*vHL_LH_list[i]+vLL_list[i])%self.fn for i in range(0,result_len)];
-        result=np.array(result_list,dtype=np.ulonglong);
-        #result=np.zeros(result_len,dtype=np.ulonglong);
-        #for i in range(0,result_len):
-        #    result[i]=(self.factor_HL_squared*vHH_list[i]+factor_HL*vHL_LH_list[i]+vLL_list[i])%self.fn;  
-        return result;
-
-
-
-
-
-    #update: write self's matrix
-    def write_matrix_to_file(self,M,file_name):
+    #Writes a matrix into a file
+    def write_matrix_to_file(self,matrix,file_name):
         if self.bits<=64:
-            save_npz(file_name, csr_matrix(M));
+            save_npz(file_name, csr_matrix(matrix));
         else:
-            rows=len(M);
-            cols=len(M[0]);
+            rows=len(matrix);
+            cols=len(matrix[0]);
             str_to_write='';
             for i in range(0,rows):
                 current_row_str='';
                 for j in range(0,cols):
-                    x=M[i][j];
+                    x=matrix[i][j];
                     if x!=0:
                         current_row_str+=(str(j)+'_'+str(x)+'_');
                 current_row_str=current_row_str[0:-1]+'\n';
@@ -357,9 +346,11 @@ class VOLE:
             file.close();
 
 
+    #Writes an Ecc matrix (matrix of only ones) into a file
     def write_ecc_to_file(self,Ecc,file_name):
         save_npz(file_name, csr_matrix(Ecc));
 
+    #Reads a matrix from a file and set it as the curent VOLE instance's matrix
     def read_matrix_from_file(self,file_name):
         if self.bits<=64:
             self.M_csr=load_npz(file_name);
@@ -369,7 +360,6 @@ class VOLE:
             self.M_HL_tuple=self.decompose_coo_matrix_to_HL(self.M_coo);
             self.transposed_M_HL_tuple=(np.transpose(self.M_HL_tuple[0]),np.transpose(self.M_HL_tuple[1]));
             self.M_tuple=(self.M_coo,self.M_csr,self.M_neighbors,self.M_HL_tuple);
-            #return self.M_tuple;
         else:
             self.M_csr=None;
             self.M_coo=None;
@@ -382,7 +372,6 @@ class VOLE:
             file.close();
             file_rows=file_content.split('\n');
             file_rows=file_rows[0:-1];
-            counter=0;
             for row_str in file_rows:
                 current_row=[];
                 current_data=[];
@@ -395,15 +384,12 @@ class VOLE:
                     j+=2;
                 rows_neighbors.append(current_row);
                 data_neighbors.append(current_data);
-                counter+=1;
             self.M_neighbors=(rows_neighbors,data_neighbors);
             self.M_bottom_neighbors=(self.M_neighbors[0][self.u:self.m],self.M_neighbors[1][self.u:self.m]);
 
         
         
         
-            
-
     #maybe also update m,k,v and u
     def set_matrix_by_neighbors(self,M_neighbors):
         self.M_csr=None;
@@ -2169,7 +2155,7 @@ class VOLE:
             v_list=v;
         data=pickle.dumps(v_list);
         v_size=len(data);
-        sent=sock.sendall(v_size.to_bytes(packet_size,'little'));
+        sent=sock.sendall(v_size.to_bytes(self.packet_size,'little'));
         if sent == 0:
             return False;
         sent=sock.sendall(data);
@@ -2178,7 +2164,7 @@ class VOLE:
         return True;
 
     def recv_vector(self,sock):
-        size_message=sock.recv(packet_size);
+        size_message=sock.recv(self.packet_size);
         if size_message == b'':
             return None;
         v_size=int.from_bytes(size_message,'little');
