@@ -890,7 +890,7 @@ class VOLE:
 
 
 
-    #Performs the PLUQ decomposition to M
+    #Performs the PLUQ decomposition to the input matrix in neighbors representation (changes the input matrix)
     #if diag=True - performs partial pivoting where rows are sorted by increasing pivot's positions
     def sparse_PLUQ_decomposition(self,M_neighbors,matrix_cols,initial_rows_permutation,initial_cols_permutation,diag):
 
@@ -1013,12 +1013,9 @@ class VOLE:
                             row_has_ended=True;
                     else:
                         z=0;
-
-
-                    #s=self.row_neighbors_mult_matrix_column(L_row_neighbors,LU_matrix_list,j);
                       
                     U_col_neighbors=(U_cols_neighbors[0][j],U_cols_neighbors[1][j]);
-                    s=self.dot_product_in_matrix_neighbors(LU_matrix_list,L_row_neighbors,U_col_neighbors,i,j);#,add_dic,mult_dic,func_name);                        
+                    s=self.dot_product_in_matrix_neighbors(LU_matrix_list,L_row_neighbors,U_col_neighbors,i,j);                      
                     if j<i: #L computation
                         inv_factor=U_diagonal_inverses[j];
                         #s=self.dot_product_in_LU_matrix(LU_matrix_list,i,j,start,j);
@@ -1082,7 +1079,8 @@ class VOLE:
         return (LU_matrix,P,Q,Q_T);
 
 
-
+    #Calculates the number of arithmetic operations in the multiplication of L*U
+    #This gives the complexity of the PLUQ decomposition
     def flops(self,LU_matrix):
         dim=len(LU_matrix);
         L=[[0]*dim for i in range(0,dim)];
@@ -1100,7 +1098,8 @@ class VOLE:
 
 
 
-
+    #Performs a dot product between a row vector and a column vector inside the LU matrix
+    #according to the given size
     def dot_product_in_LU_matrix(self,LU_matrix,row,col,size):
         result=0;
         for t in range(0,size):
@@ -1113,6 +1112,9 @@ class VOLE:
                 break;
         return result%self.fn;
 
+
+    #Performs a dot product between a row vector and a column vector inside the LU matrix
+    #according to the start and end inputs
     def dot_product_in_LU_matrix(self,LU_matrix,row,col,start,end):
         result=0;
         for t in range(start,end):
@@ -1125,13 +1127,8 @@ class VOLE:
                 break;
         return result%self.fn;
 
-    def row_neighbors_mult_matrix_column(self,row_neighbors,M,col):
-        (row_cols,row_data)=row_neighbors;
-        result=0;
-        for (j,data) in zip(row_cols,row_data):
-            result+=data*M[j][col];
-        return result%self.fn;
 
+    #Performs a dot product between a row vector and a column vector in a neighbors representation inside a matrix
     def dot_product_in_matrix_neighbors(self,M,row_neighbors,col_neighbors,row,col):
         (row_cols,row_data)=row_neighbors;
         (col_rows,col_data)=col_neighbors;
@@ -1954,6 +1951,7 @@ class VOLE:
 
 
 
+    #Multiply a row vector with the T matrix (ADINZ encoding matrix) of the current VOLE instance
     def vector_mult_T(self,h):
         if self.bits>64:
             return self.vector_mult_T_neighbors(h);
@@ -2197,6 +2195,8 @@ class VOLE:
 
 
 
+    #Generates a copy of the top (u rows) part of the current VOLE instance's matrix M
+    #Subjectet to the chosen rows in I
     def M_I_top(self,I):
         if self.bits<=64:
             M_top_I=np.zeros((self.u,self.k),dtype=np.ulonglong);
@@ -2220,6 +2220,9 @@ class VOLE:
             result_list.append(result_row);
         return result_list;
 
+
+    #Generates a copy of the top (u rows) part of the current VOLE instance's matrix M, in neighbors representation
+    #Subjectet to the chosen rows in I
     def M_I_top_neighbors(self,I):
         (rows_neighbors,data_neighbors)=self.M_neighbors;
 
