@@ -177,18 +177,6 @@ class VOLE:
         return cdf;
     
 
-    #Decompose vector into vectors of high bits and low bits 
-    def decompose_vector_high_low(self,v):
-        v_list=v.tolist();
-        v_len=len(v_list);
-        v_H=np.zeros(v_len,dtype=np.ulonglong);
-        v_L=np.zeros(v_len,dtype=np.ulonglong);
-        for i in range(0,v_len):
-            x=v_list[i];
-            v_H[i]=x>>self.factor_H;
-            v_L[i]=x&self.factor_L;
-        return (v_H,v_L);
-
 
 
     #Calculates the Matrix-Vector multiplication for the matrix M of the current Vole instance 
@@ -295,7 +283,6 @@ class VOLE:
     #Calculates the Matrix-Vector multiplication for a general matrix in neighbors representation
     #subjected to the chosen rows in I
     def matrix_neighbors_mult_vector_I(self,M_neighbors,r,I):
-        func_name='matrix_neighbors_mult_vector_I';
         rows_neighbors=M_neighbors[0];
         data_neighbors=M_neighbors[1];
         result_len=len(rows_neighbors);
@@ -315,7 +302,7 @@ class VOLE:
                 result[i]=current_result%self.fn;
         return result;
 
-    #Calculates the Matrix-Vector multiplication for a general matrix in  COOrdinate representation
+    #Calculates the Matrix-Vector multiplication for a general matrix in COOrdinate representation
     def coo_matrix_mult_vector(self,M_coo,r):
         r_list=r.tolist();
         rows=M_coo.shape[0];
@@ -333,6 +320,8 @@ class VOLE:
         result[i]=current_result%self.fn;    
         return result;
 
+    #Calculates the Matrix-Vector multiplication for a general matrix in COOrdinate representation
+    #subjected to the chosen rows in I
     def coo_matrix_mult_vector_I(self,M_coo,r,I):
         r_list=r.tolist();
         rows=M_coo.shape[0];
@@ -348,19 +337,6 @@ class VOLE:
                 current_result=current_result+int(data)*r_list[j];
         result[i]=current_result%self.fn;    
         return result;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -382,6 +358,20 @@ class VOLE:
         result_list=[(self.factor_HL_squared*vHH_list[i]+self.factor_HL*vHL_LH_list[i]+vLL_list[i])%self.fn for i in range(0,result_len)];
         result=np.array(result_list,dtype=np.ulonglong);
         return result;
+
+
+
+    #Decompose vector into vectors of high bits and low bits 
+    def decompose_vector_high_low(self,v):
+        v_list=v.tolist();
+        v_len=len(v_list);
+        v_H=np.zeros(v_len,dtype=np.ulonglong);
+        v_L=np.zeros(v_len,dtype=np.ulonglong);
+        for i in range(0,v_len):
+            x=v_list[i];
+            v_H[i]=x>>self.factor_H;
+            v_L[i]=x&self.factor_L;
+        return (v_H,v_L);
 
 
 
@@ -573,10 +563,14 @@ class VOLE:
         neighbors_degs[current_row_index]=current_row_len;
         if current_row_len==1:
             deg_one_queue.put(current_row_index);
+        #If deg can be zero:
+            #for h in range(current_row_index+1,rows):
+                #Ecc_neighbors.append([]); 
+
         return (Ecc_neighbors,neighbors_degs,symbols_locations,deg_one_queue);
         
 
-    #Transforms a matrix in  COOrdinate representation into a neighbors representation
+    #Transforms a matrix in COOrdinate representation into a neighbors representation
     def coo_matrix_to_matrix_neighbors(self,M_coo):
         rows_neighbors=[];
         data_neighbors=[];
@@ -686,9 +680,8 @@ class VOLE:
 
 
 
-
+    #Performs Luby encoding on the vector a
     def luby_encode(self,Ecc_neighbors,a):
-        func_name='luby_encode';
         code_len=len(Ecc_neighbors);
         if self.bits<=64:
             a_list=a.tolist();
@@ -696,7 +689,6 @@ class VOLE:
         else:
             a_list=a;
             code=[0]*code_len;
-        additions_counter=0;
         for i in range(0,code_len):
             current_row=Ecc_neighbors[i];
             current_code=0;
@@ -706,46 +698,47 @@ class VOLE:
         return code;
 
 
-    #not updated
-    def E_decode(self,d,I):
-
-        M_top_I=self.M_I_top(I);        
-        d_top=d[0:u];
+    #ADINZ decoder - naive version, no offline preprocessing
+    def E_decode(self,d_I,I,times):
+        d_I_top=d_I[0:self.u];
+        I_bottom=I[self.u:self.m];
 
         start = time.time();
-        s=self.gaussian_elimination(M_top_I,d_top);
+        s=self.gaussian_elimination(M_top_I,d_I_top);
         end = time.time();
         if s is None:
-            print("No solution for d[I]=M_top[I]*s");
+            print("No solution for d_top[I]=M_top[I]*s");
             return None;
+        times['Gaussian elimination']=(end-start)*1000;
         print_message_with_time("Gaussian elimination",start,end);
 
-        #M_I_csr=csr_matrix(M_I);
-        #M_I_s1=M_I_csr.dot(s);
 
-
-        d_list=d.tolist();
-        M_I_s=self.coo_matrix_mult_vector_I(self.M_coo,s,I);
-        M_I_s_list=M_I_s.tolist();
-        
-        ec_code_list=[(x-y)%self.fn for x,y in zip(d_list,M_I_s_list)];
-        ec_code=np.array(ec_code_list,dtype=np.ulonglong);
         start = time.time();
-        info=self.luby_decoding(self.Ecc_neighbors,ec_code,I);
+        M_I_bottom_s=self.M_bottom_I_mult_vector(s,I_bottom);
+        end = time.time();
+        times['M_I_bottom mult s']=(end-start)*1000;
+
+        
+        start = time.time();
+        ecc_code=self.sub_vectors(d_I[self.u:self.m],M_I_bottom_s);
+        end = time.time();
+        times['Sub vectors d_bot[I]-M_bot[I]s']=(end-start)*1000;
+
+        start = time.time();
+        info=self.luby_decoding(self.Ecc_neighbors,ec_code,I_bottom);
         end = time.time();
         if info is None:
+            print("No solution for Ecc decoding");
             return None;
         print_message_with_time("Luby decoding",start,end);
+        times['Luby decoding']=(end-start)*1000;
         return (s,info);
 
 
-
-
+    #Solvs d=M*s via Gaussian Elimination
     def gaussian_elimination(self,M,d):
         rows=M.shape[0];
         cols=M.shape[1];
-        #vec=[0]*rows;
-        #vec[:]=d[:];
         if self.bits<=64:
             d_list=d.tolist();
             M_list=M.tolist();
@@ -759,7 +752,6 @@ class VOLE:
             if pivot==None:
                 return None;
             pivot_inv=int(gp2.invert(gp2.mpz(M_list[pivot][j]),gp2.mpz(self.fn)));
-            #pivot_inv=np.reciprocal(F(mat[pivot][j]));
             prev_pivot=j;
             if pivot!=j:
                 temp=M_list[j][j:cols];
@@ -790,6 +782,8 @@ class VOLE:
         return result;
 
 
+    #Generates a list of instruction to the solution of d=M*s
+    #for a general d
     def offline_gaussian_elimination(self,M):
         rows=M.shape[0];
         cols=M.shape[1];
@@ -1544,8 +1538,7 @@ class VOLE:
 
 
         start = time.time();
-        #info=self.luby_decoding(self.Ecc_neighbors,ec_code,I[self.u:self.m],add_dic);
-        info=self.luby_decoding_by_solutions(Ecc_solutions,ecc_code);#,add_dic);
+        info=self.luby_decoding_by_solutions(Ecc_solutions,ecc_code);
         end = time.time();
         times['Luby decoding']=(end-start)*1000;
 
