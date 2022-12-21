@@ -1985,6 +1985,8 @@ class VOLE:
 
 
 
+    #Performs a dot product between 2 vectors
+    #whose decomposed to vectors of high and low bits
     def HL_dot_product(self,a,b):
         (a_H,a_L)=self.decompose_vector_high_low(a);
         (b_H,b_L)=self.decompose_vector_high_low(b);
@@ -2171,7 +2173,6 @@ class VOLE:
 
     #Multiply a row vector with a general matrix in COOrdinate representation
     def vector_mult_coo_matrix(self,h,M_coo):    
-        vec_len=len(h);
         result_len=M_coo.shape[1];
         result_list=[0]*result_len;
         h_list=h.tolist();
@@ -2286,7 +2287,6 @@ class VOLE:
     #Subjectet to the chosen rows in I
     def M_I_top_neighbors(self,I):
         (rows_neighbors,data_neighbors)=self.M_neighbors;
-
         result_rows_neighbors=[];
         result_data_neighbors=[];
         for i in range(0,self.u):
