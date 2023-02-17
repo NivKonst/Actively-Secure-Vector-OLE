@@ -16,18 +16,18 @@ def avg_dic(dic,devisor):
 
 
 def main():
-    repetitions=20;
+    repetitions=1000;
     times_dic={};
     
-    k=182;
-    w=10000;
+    #k=182;
+    #w=10000;
 
-    #k=240;
-    #w=20000;
+    k=240;
+    w=20000;
     
     mu=0.25;
     d_max=10;
-    bits=32;
+    bits=128;
     u_factor=1.4;
 
 
@@ -45,7 +45,7 @@ def main():
         current_times=Bob.run(vole);
         sum_dict_into_dict(times_dic,current_times);
         print();
-        time.sleep(7);
+        time.sleep(5);
     avg_dic(times_dic,repetitions);
     print("Avarage Times:");
     print(times_dic);

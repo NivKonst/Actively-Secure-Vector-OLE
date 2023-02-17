@@ -978,56 +978,29 @@ class VOLE:
 
         non_empty_rows_indices=[i for i in range(0,rows) if len(rows_neighbors[i])>0];
         non_empty_rows=len(non_empty_rows_indices);
-        if non_empty_rows<U_rows:
+        if non_empty_rows<U_rows: #There are not enought non-empty rows.
             return None;
         bad_rows_counter=0;
-        very_bad_row=False;
-        very_bad_rows_counter=0;
+        bad_row=False;
         maximum_bad_rows=non_empty_rows-U_rows;
         did_cols_perm=False;
 
         
         i=0;
-        #while i<U_rows
-            #gen=(t for t in range(i,rows-bad_rows_counter) if len(rows_neighbors[t])>0);
-            #next_row=next(gen,None);
-            #if next_row==None: #no more empty rows - not full rank
-            #    return None;
         current_non_empty_row_index=0;
         while i<U_rows and current_non_empty_row_index<non_empty_rows:
-            #print("i={0}".format(i));
             next_row=non_empty_rows_indices[current_non_empty_row_index];
             current_non_empty_row_index+=1;
             
             if next_row!=i: #the current row is empty, we need to premute other row
-                #if very_bad_row:
-                #    print("HERE");
-                #   print(i);
-                #   print(next_row);
-
-                #bad_rows_counter+=1;
-                #if bad_rows_counter>rows-U_rows: #check if too many bad_rows
-                #    return None;
-                #while rows_neighbors[-bad_rows_counter]==[]:
-                #    bad_rows_counter+=1;
-                #    if bad_rows_counter>rows-U_rows: #check if too many bad_rows
-                #        return None;
-                
-                #temp=rows_neighbors[i];
                 rows_neighbors[i]=rows_neighbors[next_row];
-                #rows_neighbors[next_row]=rows_neighbors[-bad_rows_counter];
-                #rows_neighbors[-bad_rows_counter]=[];#temp;
                 rows_neighbors[next_row]=[];
                 
                 data_neighbors[i]=data_neighbors[next_row];
-                #data_neighbors[next_row]=data_neighbors[-bad_rows_counter];
-                #data_neighbors[-bad_rows_counter]=[];
                 data_neighbors[next_row]=[];
                 
                 temp=rows_permutation[i];
                 rows_permutation[i]=rows_permutation[next_row];
-                #rows_permutation[next_row]=rows_permutation[-bad_rows_counter];
-                #rows_permutation[-bad_rows_counter]=temp;
                 rows_permutation[next_row]=temp;
                 
 
@@ -1068,24 +1041,20 @@ class VOLE:
                     s=self.dot_product_in_matrix_neighbors(LU_matrix_list,L_row_neighbors,U_col_neighbors,i,j);                      
                     if j<i: #L computation
                         inv_factor=U_diagonal_inverses[j];
-                        #s=self.dot_product_in_LU_matrix(LU_matrix_list,i,j,start,j);
                         LU_i_j=((z-s)*inv_factor)%self.fn;
                         if LU_i_j!=0:
                             L_row_neighbors[0].append(j);
                             L_row_neighbors[1].append(LU_i_j);
                     else: #U computation
-                        #s=self.dot_product_in_LU_matrix(LU_matrix_list,i,j,start,i);
                         LU_i_j=(z-s)%self.fn;
-                        #adds_counter+=1;
                         if LU_i_j!=0:
                             U_col_neighbors[0].append(i);
                             U_col_neighbors[1].append(LU_i_j)
                             if not found_non_zero_u:
+                                #print("found a non-zero u in row {0}".format(i));
                                 found_non_zero_u=True;
                                 first_non_zero_u=j;
                     LU_matrix_list[i][j]=LU_i_j;
-
-
             if found_non_zero_u:
                 if first_non_zero_u>i: #The first non-zero u is from the right to the ith column.
                     for t in range(0,i+1): #swap columns
@@ -1110,12 +1079,11 @@ class VOLE:
                 U_diagonal_inverses[i]=int(gp2.invert(gp2.mpz(LU_matrix_list[i][i]),gp2.mpz(self.fn)));
                 i+=1;
             else:
-                print("Bad Row, U in this row is zero");
-                print(i);
-                very_bad_rows_counter+=1;
-                if very_bad_rows_counter>maximum_bad_rows:
+                #print("Bad Row, U in this row is zero");
+                bad_rows_counter+=1;
+                bad_row=True;
+                if bad_rows_counter>maximum_bad_rows:
                     return None;
-                very_bad_row=True;
                 rows_neighbors[i]=[];
                 data_neighbors[i]=[];
         

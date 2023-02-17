@@ -142,7 +142,11 @@ def run(vole):
     s=result[0];
     shifted_info=result[1];
 
+    start=time.time();
     decoded_info=vole.scalar_mult_and_add_vector(delta_x,a,shifted_info);        
+    end=time.time();
+    vole.print_message_with_time("Bob computed ax+b'",start,end);
+    times['Result shifting to x']=(end-start)*1000;
 
 
     #Get Alices inputs for validation
@@ -162,8 +166,12 @@ def run(vole):
     else:
         print("Decoding didn't seccseed");
 
-        
+    start=time.time();        
     shifted_info_by_b=vole.add_vectors(decoded_info,b);
+    end=time.time();
+    vole.print_message_with_time("Bob computed ax+b+b'",start,end);
+    times['Result shifting by b']=(end-start)*1000;
+
     start = time.time();
     if vole.send_vector(client_socket,shifted_info_by_b)==False:
         print("socket connection broken");
@@ -181,15 +189,15 @@ def run(vole):
 
 
 def main():
-    k=182;
-    w=10000;
+    #k=182;
+    #w=10000;
     
-    #k=240;
-    #w=20000;
+    k=240;
+    w=20000;
     
     mu=0.25;
     d_max=10;
-    bits=64;
+    bits=128;
     u_factor=1.4;
 
     vole=VOLE(k,w,mu,d_max,bits,u_factor);

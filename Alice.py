@@ -131,7 +131,11 @@ def run(vole):
     vole.print_message_with_time("Alice got ax+b+b' from Bob",start,end);
     sock.close();
     
+    start=time.time();
     result_info=vole.sub_vectors(shifted_info,b_tag);
+    end=time.time(); 
+    vole.print_message_with_time("Alice computed ax+b",start,end);
+    times["Result shifting by b'"]=(end-start)*1000;
 
 
     print("Times:");
@@ -141,15 +145,15 @@ def run(vole):
 
 
 def main():
-    k=182;
-    w=10000;
+    #k=182;
+    #w=10000;
     
-    #k=240;
-    #w=20000;
+    k=240;
+    w=20000;
     
     mu=0.25;
     d_max=10;
-    bits=64;
+    bits=128;
     u_factor=1.4;
 
 
