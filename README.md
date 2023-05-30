@@ -8,3 +8,5 @@ We present a Python implementation and suggest several practical and theoretical
 
 More details about our work can be found at:
 https://www.iacr.org/cryptodb/data/paper.php?pubkey=33002
+Or at:
+https://link.springer.com/chapter/10.1007/978-3-031-30617-4_7
