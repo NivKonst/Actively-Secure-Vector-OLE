@@ -1,6 +1,5 @@
 import sys
-sys.path.append('C://Users//YuvalKon//Desktop//Test');
-sys.path.append('C://Users//yuval//Desktop//Python_Implementation//Test');
+sys.path.append('..');
 import Vector_OLE
 from Vector_OLE import VOLE
 
