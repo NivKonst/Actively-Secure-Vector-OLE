@@ -17,6 +17,7 @@ A presentation about of our work from Eurocrypt 2023 can be found at: https://yo
 
 ## Installation
 
-In order to run this project, use python 3.7 and to make sure that you have all the needed packages. Use the pip module and install the packages from the requirements.txt file:
+In order to run this project, use python 3.7 and make sure that you have all the needed packages. 
+Use the pip module and install the packages from the requirements.txt file:
 
 `python -m pip install -r requirements.txt`
