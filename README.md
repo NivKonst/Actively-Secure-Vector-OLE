@@ -9,9 +9,7 @@ We present a Python implementation and suggest several practical and theoretical
 More details about our work can be found at:
 
 https://eprint.iacr.org/2023/270
-
 https://www.iacr.org/cryptodb/data/paper.php?pubkey=33002
-
 https://link.springer.com/chapter/10.1007/978-3-031-30617-4_7
 
 A presentation about of our work from Eurocrypt 2023 can be found at: https://youtu.be/Aq_btPAt1T4?si=_OXNyWpcT83SZ1RB&t=1426
@@ -19,6 +17,6 @@ A presentation about of our work from Eurocrypt 2023 can be found at: https://yo
 
 ## Installation
 
-In order to run this project, use python 3.7 and to make sure that you have all the needed packages. Use the pip module and install the packages from the reuirements.txt file:
+In order to run this project, use python 3.7 and to make sure that you have all the needed packages. Use the pip module and install the packages from the requirements.txt file:
 
-
+'python -m pip install -r requirements.txt'
