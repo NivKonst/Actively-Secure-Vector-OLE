@@ -12,7 +12,7 @@ https://eprint.iacr.org/2023/270
 https://www.iacr.org/cryptodb/data/paper.php?pubkey=33002
 https://link.springer.com/chapter/10.1007/978-3-031-30617-4_7
 
-A presentation about of our work from Eurocrypt 2023 can be found at: https://youtu.be/Aq_btPAt1T4?si=_OXNyWpcT83SZ1RB&t=1426
+A presentation of our work from the Eurocrypt conference of 2023 at Lyon, France can be found at: https://youtu.be/Aq_btPAt1T4?si=_OXNyWpcT83SZ1RB&t=1426
 
 
 ## Installation
