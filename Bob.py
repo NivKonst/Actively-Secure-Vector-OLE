@@ -195,7 +195,7 @@ def main():
     
     mu=0.25;
     d_max=10;
-    bits=64;
+    bits=128;
     u_factor=1.4;
 
     vole=VOLE(k,w,mu,d_max,bits,u_factor);
