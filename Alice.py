@@ -31,14 +31,11 @@ def run(vole):
 
 
 
-    if vole.bits<=64:
-        padded_ec_code=np.concatenate((np.zeros(vole.u,dtype=np.ulonglong),ec_code),axis=0);
-    else:
-        padded_ec_code=([0]*vole.u)+ec_code;
+    padded_ec_code=vole.pad_vector_with_leading_zeros(ec_code,vole.u);
     start=time.time();
     d_tag=vole.add_vectors(padded_ec_code,M_rtag);
     end=time.time();
-    times["d_tag computation"]=(end-start)*1000;
+    times["d' computation"]=(end-start)*1000;
 
 
 
@@ -89,7 +86,7 @@ def run(vole):
     start=time.time();
     d=vole.scalar_mult_and_add_vector(x_tag,c,d_tag);
     end=time.time(); 
-    vole.print_message_with_time("Alice computed d=x'*c+Er'(b)",start,end);
+    vole.print_message_with_time("Alice computed d=x'*c+Er'(b')",start,end);
     times['d computation']=(end-start)*1000;
 
 
