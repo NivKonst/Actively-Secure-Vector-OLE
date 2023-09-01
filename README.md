@@ -13,3 +13,7 @@ https://eprint.iacr.org/2023/270
 https://www.iacr.org/cryptodb/data/paper.php?pubkey=33002
 
 https://link.springer.com/chapter/10.1007/978-3-031-30617-4_7
+
+A presentation about our paper from Eurocrypt 2023 can be fount at: https://youtu.be/Aq_btPAt1T4?si=_OXNyWpcT83SZ1RB&t=1426
+
+
