@@ -82,12 +82,10 @@ def run(vole):
     vole.print_message_with_time("Bob computed Ecc(a)",start,end);
     times['Ecc(a) Computation']=(end-start)*1000;
 
-    if vole.bits<=64:
-        v=np.concatenate((r,a), axis=0)
-        padded_ec_code=np.concatenate((np.zeros(vole.u,dtype=np.ulonglong),ec_code),axis=0);
-    else:
-        v=r+a;
-        padded_ec_code=([0]*vole.u)+ec_code;
+
+    v=vole.concat_vectors(r,a);
+    padded_ec_code=vole.pad_vector_with_leading_zeros(ec_code,vole.u);
+    
 
     start=time.time();
     c=vole.add_vectors(pseudorandom_vector,padded_ec_code);
@@ -197,7 +195,7 @@ def main():
     
     mu=0.25;
     d_max=10;
-    bits=128;
+    bits=64;
     u_factor=1.4;
 
     vole=VOLE(k,w,mu,d_max,bits,u_factor);

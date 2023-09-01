@@ -1846,25 +1846,6 @@ class VOLE:
         return result;
 
 
-    #Calculates the linear transformation x*a+b over the current VOLE instance's field
-    def scalar_mult_and_add_vector_1(self,x,a,b):
-        if self.bits<32:
-            result=(x*a+b)%self.fn;
-            return result;
-        if self.bits<=64:
-            a_list=a.tolist();
-            b_list=b.tolist();
-        else:
-            a_list=a;
-            b_list=b;
-        result_len=len(a_list);
-        result_list=[(x*a_list[i]+b_list[i])%self.fn for i in range(0,result_len)];
-        if self.bits<=64:
-            result=np.array(result_list,dtype=np.ulonglong);
-        else:
-            result=result_list;
-        return result;
-
 
 
     #Calculates the linear transformation x*a+b over the current VOLE instance's field
@@ -1912,6 +1893,21 @@ class VOLE:
         return result;
 
 
+    #Concat 2 vectors
+    def concat_vectors(self,a,b):
+        if self.bits<=64:
+            result=np.concatenate((a,b), axis=0)
+        else:
+            result=a+b;
+        return result;
+
+    #Pad a vector with number of leading zeros
+    def pad_vector_with_leading_zeros(self,a,num_of_zeros):
+        if self.bits<=64:
+            result=np.concatenate((np.zeros(num_of_zeros,dtype=np.ulonglong),a),axis=0);
+        else:
+            result=([0]*num_of_zeros)+a;
+        return result;
 
 
     #Performs the dot product of a and b over the current VOLE instance's field  
@@ -1997,11 +1993,11 @@ class VOLE:
         left=self.vector_mult_matrix_neighbors(h,self.M_neighbors);
         h_right=h[self.u:self.m];
         right=self.vector_mult_Ecc_neighbors(h_right,self.Ecc_neighbors);
-
-        if self.bits<=64:
-            result=np.concatenate((left,right), axis=0)
-        else:
-            result=left+right;
+        #if self.bits<=64:
+        #    result=np.concatenate((left,right), axis=0)
+        #else:
+        #    result=left+right;
+        result=self.concat_vectors(left,right);
         return result;
 
 
@@ -2081,10 +2077,11 @@ class VOLE:
         h_right=h[self.u:self.m];
         h_right_support=[x-self.u for x in h_support if x>=self.u];
         right=self.sparse_vector_mult_Ecc_neighbors(h_right,h_right_support,self.Ecc_neighbors);
-        if self.bits<=64:
-            result=np.concatenate((left,right), axis=0)
-        else:
-            result=left+right;
+        #if self.bits<=64:
+        #    result=np.concatenate((left,right), axis=0)
+        #else:
+        #    result=left+right;
+        result=self.concat_vectors(left,right);
         return result;
 
 
@@ -2153,6 +2150,8 @@ class VOLE:
         result_list=[x%self.fn for x in result_list];
         result=np.array(result_list,dtype=np.ulonglong);
         return result;
+
+
 
 
 
