@@ -147,7 +147,7 @@ def run(vole):
     times['Result shifting to x']=(end-start)*1000;
 
 
-    #Get Alices inputs for validation
+    #Get Alice's inputs for validation
     x=vole.recv_scalar(client_socket);
     b_tag=vole.recv_vector(client_socket);
 
