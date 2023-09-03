@@ -49,7 +49,7 @@ def run(vole):
 
 
     #ONLINE PHASE
-    #Bob_ip_addr='10.100.102.6';
+    #Bob_ip_addr='';
     Bob_ip_addr=socket.gethostbyname(socket.gethostname());
     Bob_port=500;
     ot_port=2000;
@@ -98,12 +98,9 @@ def run(vole):
     vole.print_message_with_time("Alice computed α=h*c+(x-x')={0}".format(alpha),start,end);
     times['α Computation']=(end-start)*1000;
     print("The CDS secret is x-x'={0}".format(cds_secret%vole.fn));
-    if vole.bits<=64:
-        alpha_gamma=np.zeros(vole.n+1,dtype=np.ulonglong);
-        alpha_gamma[0]=alpha;
-        alpha_gamma[1:]=gamma[:];
-    else:
-        alpha_gamma=[alpha]+gamma;
+
+    alpha_gamma=vole.concat_scalar_vector(alpha,gamma);
+
     start=time.time();
     if vole.send_vector(sock,alpha_gamma)==False:
         print("Socket connection is broken");

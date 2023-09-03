@@ -1410,18 +1410,6 @@ class VOLE:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     #not updated
     def E_decode_by_instructions(self,M_instructions,d_I,I,times):
         d_I_top=d_I[0:u];
@@ -1826,143 +1814,10 @@ class VOLE:
         cds_secret=(t-s)%self.fn;
         return cds_secret;
 
-    #Adds 2 vectors over the current VOLE instance's field
-    def add_vectors(self,a,b):
-        if self.bits<64:
-            result=(a+b)%self.fn;
-            return result;
-        if self.bits==64:
-            a_list=a.tolist();
-            b_list=b.tolist();
-        else:
-            a_list=a;
-            b_list=b;
-        result_len=len(a_list);
-        result_list=[(a_list[i]+b_list[i])%self.fn for i in range(0,result_len)];
-        if self.bits==64:
-            result=np.array(result_list,dtype=np.ulonglong);
-        else:
-            result=result_list;
-        return result;
 
 
 
 
-    #Calculates the linear transformation x*a+b over the current VOLE instance's field
-    def scalar_mult_and_add_vector(self,x,a,b):
-        if self.bits<64:
-            result=(x*a+b)%self.fn;
-            return result;
-        if self.bits==64:
-            a_list=a.tolist();
-            b_list=b.tolist();
-        else:
-            a_list=a;
-            b_list=b;
-        result_len=len(a_list);
-        result_list=[(x*a_list[i]+b_list[i])%self.fn for i in range(0,result_len)];
-        if self.bits==64:
-            result=np.array(result_list,dtype=np.ulonglong);
-        else:
-            result=result_list;
-        return result;
-
-
-
-
-
-    #Subtracts 2 vectors over the current VOLE instance's field
-    def sub_vectors(self,a,b):
-        if self.bits<64:
-            c=a.astype('int64');
-            d=b.astype('int64');
-            result=(c-d)%self.fn;
-            return result;
-        if self.bits==64:
-            a_list=a.tolist();
-            b_list=b.tolist();
-        else:
-            a_list=a;
-            b_list=b;
-        result_len=len(a_list);
-        result_list=[(a_list[i]-b_list[i])%self.fn for i in range(0,result_len)];
-        if self.bits==64:
-            result=np.array(result_list,dtype=np.ulonglong);
-        else:
-            result=result_list;
-        return result;
-
-
-    #Concat 2 vectors
-    def concat_vectors(self,a,b):
-        if self.bits<=64:
-            result=np.concatenate((a,b), axis=0)
-        else:
-            result=a+b;
-        return result;
-
-    #Pad a vector with number of leading zeros
-    def pad_vector_with_leading_zeros(self,a,num_of_zeros):
-        if self.bits<=64:
-            result=np.concatenate((np.zeros(num_of_zeros,dtype=np.ulonglong),a),axis=0);
-        else:
-            result=([0]*num_of_zeros)+a;
-        return result;
-
-
-    #Performs the dot product of a and b over the current VOLE instance's field  
-    def dot_product(self,a,b): 
-        if self.bits<32:
-            result=int((a.dot(b))%self.fn);
-            return result;
-        if self.bits<=64:
-            a_list=a.tolist();
-            b_list=b.tolist();
-        else:
-            a_list=a;
-            b_list=b;
-        result=0;
-        for x,y in zip(a_list,b_list):
-            result+=x*y;
-        return result%self.fn;
-
-
-
-
-    #Performs the dot product between the sparse vector a and the vector b over the current VOLE instance's field      
-    def sparse_dot_product(self,a,a_support,b):    
-        if self.bits<32:
-            result=int((a.dot(b))%self.fn);
-            return result;
-        if self.bits<=64:
-            a_list=a.tolist();
-            b_list=b.tolist();
-        else:
-            a_list=a;
-            b_list=b;
-        result=0;
-        for i in a_support:
-            x=a_list[i];
-            y=b_list[i];
-            result+=x*y;
-        return result%self.fn;
-
-
-
-    #Performs a dot product between 2 vectors
-    #whose decomposed to vectors of high and low bits
-    def HL_dot_product(self,a,b):
-        (a_H,a_L)=self.decompose_vector_high_low(a);
-        (b_H,b_L)=self.decompose_vector_high_low(b);
-
-        aHbH=(a_H.dot(b_H));
-        aHbL=(a_H.dot(b_L));
-        aLbH=(a_L.dot(b_H));
-        aLbL=(a_L.dot(b_L));
-        aHbL_aLbH=aHbL+aLbH;
-
-        result=(self.factor_HL_squared*int(aHbH)+factor_HL*int(aHbL_aLbH)+int(aLbL))%self.fn;
-        return result;
 
 
 
@@ -2344,11 +2199,171 @@ class VOLE:
             result[i]=current_result%self.fn;
 
 
+#Vector Operations:
+            
+    def zero_vector(self,size):
+        if self.bits<=64:
+            result=np.zeros(size,dtype=np.ulonglong);
+        else:
+            result=[0]*size;
+        return result;
+
+    def compare_vectors(self,a,b):
+        if self.bits<=64:
+            result=(a==b).all();
+        else:
+            result=(a==b);
+        return result;
+
+
+
+    #Adds 2 vectors over the current VOLE instance's field
+    def add_vectors(self,a,b):
+        if self.bits<64:
+            result=(a+b)%self.fn;
+            return result;
+        if self.bits==64:
+            a_list=a.tolist();
+            b_list=b.tolist();
+        else:
+            a_list=a;
+            b_list=b;
+        result_len=len(a_list);
+        result_list=[(a_list[i]+b_list[i])%self.fn for i in range(0,result_len)];
+        if self.bits==64:
+            result=np.array(result_list,dtype=np.ulonglong);
+        else:
+            result=result_list;
+        return result;
+
+
+
+    #Subtracts 2 vectors over the current VOLE instance's field
+    def sub_vectors(self,a,b):
+        if self.bits<64:
+            c=a.astype('int64');
+            d=b.astype('int64');
+            result=(c-d)%self.fn;
+            return result;
+        if self.bits==64:
+            a_list=a.tolist();
+            b_list=b.tolist();
+        else:
+            a_list=a;
+            b_list=b;
+        result_len=len(a_list);
+        result_list=[(a_list[i]-b_list[i])%self.fn for i in range(0,result_len)];
+        if self.bits==64:
+            result=np.array(result_list,dtype=np.ulonglong);
+        else:
+            result=result_list;
+        return result;
+
+
+    #Concats 2 vectors
+    def concat_vectors(self,a,b):
+        if self.bits<=64:
+            result=np.concatenate((a,b),axis=0)
+        else:
+            result=a+b;
+        return result;
+
+    #Concat scalar and vector
+    def concat_scalar_vector(self,x,a):
+        if self.bits<=64:
+            result_len=len(a)+1;
+            result=np.zeros(result_len,dtype=np.ulonglong);
+            result[0]=x;
+            result[1:]=a[:]
+        else:
+            result=[x]+a;
+        return result;
+
+
+
+    #Pads a vector with number of leading zeros
+    def pad_vector_with_leading_zeros(self,a,num_of_zeros):
+        if self.bits<=64:
+            result=np.concatenate((np.zeros(num_of_zeros,dtype=np.ulonglong),a),axis=0);
+        else:
+            result=([0]*num_of_zeros)+a;
+        return result;
+
+
+    #Calculates the linear transformation x*a+b over the current VOLE instance's field
+    def scalar_mult_and_add_vector(self,x,a,b):
+        if self.bits<64:
+            result=(x*a+b)%self.fn;
+            return result;
+        if self.bits==64:
+            a_list=a.tolist();
+            b_list=b.tolist();
+        else:
+            a_list=a;
+            b_list=b;
+        result_len=len(a_list);
+        result_list=[(x*a_list[i]+b_list[i])%self.fn for i in range(0,result_len)];
+        if self.bits==64:
+            result=np.array(result_list,dtype=np.ulonglong);
+        else:
+            result=result_list;
+        return result;
+
+
+
+    #Performs the dot product of a and b over the current VOLE instance's field  
+    def dot_product(self,a,b): 
+        if self.bits<32:
+            result=int((a.dot(b))%self.fn);
+            return result;
+        if self.bits<=64:
+            a_list=a.tolist();
+            b_list=b.tolist();
+        else:
+            a_list=a;
+            b_list=b;
+        result=0;
+        for x,y in zip(a_list,b_list):
+            result+=x*y;
+        return result%self.fn;
 
 
 
 
+    #Performs the dot product between the sparse vector a and the vector b over the current VOLE instance's field      
+    def sparse_dot_product(self,a,a_support,b):    
+        if self.bits<32:
+            result=int((a.dot(b))%self.fn);
+            return result;
+        if self.bits<=64:
+            a_list=a.tolist();
+            b_list=b.tolist();
+        else:
+            a_list=a;
+            b_list=b;
+        result=0;
+        for i in a_support:
+            x=a_list[i];
+            y=b_list[i];
+            result+=x*y;
+        return result%self.fn;
 
+
+
+    #Performs a dot product between 2 vectors
+    #whose decomposed to vectors of high and low bits
+    def HL_dot_product(self,a,b):
+        (a_H,a_L)=self.decompose_vector_high_low(a);
+        (b_H,b_L)=self.decompose_vector_high_low(b);
+
+        aHbH=(a_H.dot(b_H));
+        aHbL=(a_H.dot(b_L));
+        aLbH=(a_L.dot(b_H));
+        aLbL=(a_L.dot(b_L));
+        aHbL_aLbH=aHbL+aLbH;
+
+        result=(self.factor_HL_squared*int(aHbH)+factor_HL*int(aHbL_aLbH)+int(aLbL))%self.fn;
+        return result;
 
 
 
@@ -2359,7 +2374,7 @@ def main():
     w=10000;
     mu=0.25;
     d_max=10;
-    bits=128;
+    bits=64;
     u_factor=1.4;
 
 

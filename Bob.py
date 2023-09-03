@@ -115,12 +115,8 @@ def run(vole):
 
     ot_outputs_vector=vole.receiver_oblivious_transfer(vole.m,I,vole.bits,ot_ip_addr,ot_port,times);
 
-    if vole.bits<=64:
-        d_I=np.zeros(vole.m,dtype=np.ulonglong);
-        h_I_not=np.zeros(vole.m,dtype=np.ulonglong);
-    else:
-        d_I=[0]*vole.m;
-        h_I_not=[0]*vole.m;
+    d_I=vole.zero_vector(vole.m);
+    h_I_not=vole.zero_vector(vole.m);
     h_I_not_support=[];
     for i in range(0,vole.m):
         if I[i]==1:
@@ -153,13 +149,8 @@ def run(vole):
 
     info_from_Alice=vole.scalar_mult_and_add_vector(x,a,b_tag);
 
-    if vole.bits<128:
-        success_flag=(decoded_info==info_from_Alice).all();
-    else:
-        success_flag=(decoded_info==info_from_Alice);
-
         
-    if success_flag:
+    if vole.compare_vectors(decoded_info,info_from_Alice):
         print("Decoding seccseeded");
     else:
         print("Decoding didn't seccseed");
