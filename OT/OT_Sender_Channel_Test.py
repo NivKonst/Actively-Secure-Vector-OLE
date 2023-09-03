@@ -13,7 +13,7 @@ def oblivious_transfer(num_of_OTs,ot_0_inputs,ot_1_inputs,ip_addr,port,time_sum)
 
 
 
-#ip_addr='10.100.102.4';
+#ip_addr='';
 ip_addr=socket.gethostbyname(socket.gethostname());
 ot_port=2000;
 repetitions=300;
