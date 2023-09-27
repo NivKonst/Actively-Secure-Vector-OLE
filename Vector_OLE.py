@@ -2388,13 +2388,13 @@ class VOLE:
 def main():
     k=182;
     w=10000;
-    mu=0.25;
-    d_max=10;
     bits=64;
-    u_factor=1.4;
+    #mu=0.25;
+    #d_max=10;
+    #u_factor=1.4;
 
 
-    vole=VOLE(k,w,bits,mu,d_max,u_factor);
+    vole=VOLE(k,w,bits);#,mu,d_max,u_factor);
     vole.robust_soliton_distribution(10000);
     vole.robust_soliton_distribution(20000);
 
