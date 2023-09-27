@@ -4,11 +4,11 @@ import Vector_OLE
 from Vector_OLE import VOLE
 
 
-k=182;
-w=10000;
+#k=182;
+#w=10000;
 
-#k=240;
-#w=20000;
+k=240;
+w=20000;
 
 bits=128;
 #mu=0.25;
