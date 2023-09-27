@@ -24,14 +24,14 @@ def main():
 
     k=240;
     w=20000;
-    
-    mu=0.25;
-    d_max=10;
-    bits=128;
-    u_factor=1.4;
+
+    bits=128;    
+    #mu=0.25;
+    #d=10;
+    #u_factor=1.4;
 
 
-    vole=VOLE(k,w,mu,d_max,bits,u_factor);
+    vole=VOLE(k,w,bits);#,mu,d,u_factor);
     if bits<=64:
         file_name=".\\Matrices\\Matrix{0}_{1}.npz".format(k,bits);
     else:

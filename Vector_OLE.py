@@ -24,14 +24,29 @@ fn_16=65521;
 class VOLE:
 
     #Initialization of a VOLE instance
-    def __init__(self,k,w,mu,dmax,bits,u_factor):
+    def __init__(self,k,w,bits,mu=0.25,d=10,u_factor=1.4):
+        if k<=0:
+            raise Exception("k must be a positive number");
+        if w<=0:
+            raise Exception("w must be a positive number");
+        if mu<0 or mu>1:
+            raise Exception("μ must be a fraction between 0 and 1");
+        if d<=0:
+            raise Exception("The number of non-zero entries in a matrix row - d, must be positive");
+        if u_factor<=1:
+            raise Exception("The top part of the matrix must be larger than k, hence u_factor should be greater than 1");
+        if k<d:
+            raise Exception("k should be at least the number of non-zero entries in a row - d");
+        v=(int)(k**2);
+        if v<=w:
+            raise Exception("w should be smaller than k^2");
         self.k=k;
         self.w=w;
         self.u=(int)(u_factor*k);
-        self.v=(int)(k**2);
+        self.v=v;
         self.m=self.u+self.v;
         self.mu=mu;
-        self.dmax=dmax;
+        self.d=d;
         self.n=k+w;
         self.M_tuple=None;
         self.M_coo=None;
@@ -53,6 +68,8 @@ class VOLE:
             self.fn=fn_16;
         elif self.bits==128:
             self.fn=fn_128;
+        else:
+            raise Exception("The bits of the VOLE should be chosen from {16,32,64,128}");
         self.bytes=self.bits//8;
         self.packet_size=4;
         self.factor_H=bits//2;
@@ -61,7 +78,6 @@ class VOLE:
         self.factor_HL_squared=self.factor_HL**2;
         #self.F=galois.GF(self.fn);
         self.print_parameters();
-
 
 
     #Prints the parameters of the current VOLE instance
@@ -2378,7 +2394,7 @@ def main():
     u_factor=1.4;
 
 
-    vole=VOLE(k,w,mu,d_max,bits,u_factor);
+    vole=VOLE(k,w,bits,mu,d_max,u_factor);
     vole.robust_soliton_distribution(10000);
     vole.robust_soliton_distribution(20000);
 
