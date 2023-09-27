@@ -437,6 +437,7 @@ class VOLE:
                         current_row_str+=(str(j)+'_'+str(x)+'_');
                 current_row_str=current_row_str[0:-1]+'\n';
                 str_to_write+=current_row_str;
+            str_to_write=str_to_write[0:-1];
             file=open(file_name+'.txt','w');
             file.write(str_to_write);
             file.close();
@@ -449,7 +450,15 @@ class VOLE:
     #Reads a matrix from a file and set it as the curent VOLE instance's matrix
     def read_matrix_from_file(self,file_name):
         if self.bits<=64:
-            self.M_csr=load_npz(file_name);
+            try:
+                M_csr=load_npz(file_name);
+                rows=M_csr.shape[0];
+                cols=M_csr.shape[1];
+            except FileNotFoundError as e:
+                raise e;
+            if rows!=self.m or cols!=self.k:
+                raise Exception("Matrix in file has wrong dimensions.");
+            self.M_csr=M_csr;
             self.M_coo=coo_matrix(self.M_csr);
             self.M_neighbors=self.coo_matrix_to_matrix_neighbors(self.M_coo);
             self.M_bottom_neighbors=(self.M_neighbors[0][self.u:self.m],self.M_neighbors[1][self.u:self.m]);
@@ -463,11 +472,21 @@ class VOLE:
             self.M_tuple=None;
             rows_neighbors=[];
             data_neighbors=[];
-            file=open(file_name,'r');
-            file_content=file.read();
+            try:
+                file=open(file_name,'r');
+            except FileNotFoundError as e:
+                raise e;
+            try:
+                file_content=file.read();
+            except Exception as e:
+                file.close();
+                raise e;
             file.close();
             file_rows=file_content.split('\n');
-            file_rows=file_rows[0:-1];
+            #file_rows=file_rows[0:-1];
+            rows=len(file_rows);
+            if rows!=self.m:
+                raise Exception("Matrix in file has wrong dimensions.");
             for row_str in file_rows:
                 current_row=[];
                 current_data=[];
@@ -482,7 +501,6 @@ class VOLE:
                 data_neighbors.append(current_data);
             self.M_neighbors=(rows_neighbors,data_neighbors);
             self.M_bottom_neighbors=(self.M_neighbors[0][self.u:self.m],self.M_neighbors[1][self.u:self.m]);
-
         
         
         
@@ -537,7 +555,15 @@ class VOLE:
 
     #Reads an Ecc matrix from a file and set it as the curent VOLE instance's Ecc
     def read_ecc_from_file(self,file_name):
-        self.Ecc_csr=load_npz(file_name);
+        try:
+            Ecc_csr=load_npz(file_name);
+            rows=Ecc_csr.shape[0];
+            cols=Ecc_csr.shape[1];
+        except FileNotFoundError as e:
+            raise e;
+        if rows!=self.v or cols!=self.w:
+            raise Exception("Ecc in file has wrong dimensions.");
+        self.Ecc_csr=Ecc_csr;
         self.Ecc_coo=coo_matrix(self.Ecc_csr);
         tupl=self.ecc_coo_matrix_to_neighbors(self.Ecc_coo);
         self.Ecc_neighbors=tupl[0];
@@ -802,12 +828,14 @@ class VOLE:
 
     #Solvs d=M*s via Gaussian Elimination
     def gaussian_elimination(self,M,d):
-        rows=M.shape[0];
-        cols=M.shape[1];
         if self.bits<=64:
+            rows=M.shape[0];
+            cols=M.shape[1];
             d_list=d.tolist();
             M_list=M.tolist();
         else:
+            rows=len(M);
+            cols=len(M[0]);
             d_list=d;
             M_list=M;
             
@@ -850,12 +878,13 @@ class VOLE:
     #Generates a list of instruction to the solution of d=M*s
     #for a general vector d
     def offline_gaussian_elimination(self,M):
-        rows=M.shape[0];
-        cols=M.shape[1];
-
         if self.bits<=64:
+            rows=M.shape[0];
+            cols=M.shape[1];
             M_list=M.tolist();
         else:
+            rows=len(M);
+            cols=len(M[0]);
             M_list=M;
         instructions=[];
         for j in range(0,cols):

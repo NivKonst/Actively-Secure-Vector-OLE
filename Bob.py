@@ -185,15 +185,19 @@ def main():
     #w=20000;
 
     bits=128;    
-    vole=VOLE(k,w,bits);
-    if bits<=64:
-        file_name=".\\Matrices\\Matrix{0}_{1}.npz".format(k,bits);
+    try:
+        vole=VOLE(k,w,bits);
+        if bits<=64:
+            file_name=".\\Matrices\\Matrix{0}_{1}.npz".format(k,bits);
+        else:
+            file_name=".\\Matrices\\Matrix{0}_{1}.txt".format(k,bits);
+        vole.read_matrix_from_file(file_name);
+        file_name=".\\Ecc\\Ecc{0}_{1}.npz".format(k,w);
+        vole.read_ecc_from_file(file_name);
+    except Exception as e:
+        print(e);
     else:
-        file_name=".\\Matrices\\Matrix{0}_{1}.txt".format(k,bits);
-    vole.read_matrix_from_file(file_name);
-    file_name=".\\Ecc\\Ecc{0}_{1}.npz".format(k,w);
-    vole.read_ecc_from_file(file_name.format(k,w));
-    run(vole);
+        run(vole);
 
 if __name__ == "__main__":
     main();

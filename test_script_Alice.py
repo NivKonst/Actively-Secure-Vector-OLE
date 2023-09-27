@@ -31,25 +31,27 @@ def main():
     #d=10;
     #u_factor=1.4;
 
-
-    vole=VOLE(k,w,bits);#mu,d,bits,u_factor);
-    if bits<=64:
-        file_name=".\\Matrices\\Matrix{0}_{1}.npz".format(k,bits);
+    try:
+        vole=VOLE(k,w,bits);#,mu,d,u_factor);
+        if bits<=64:
+            file_name=".\\Matrices\\Matrix{0}_{1}.npz".format(k,bits);
+        else:
+            file_name=".\\Matrices\\Matrix{0}_{1}.txt".format(k,bits);
+        vole.read_matrix_from_file(file_name);
+        file_name=".\\Ecc\\Ecc{0}_{1}.npz".format(k,w);
+        vole.read_ecc_from_file(file_name.format(k,w));
+    except Exception as e:
+        print(e);
     else:
-        file_name=".\\Matrices\\Matrix{0}_{1}.txt".format(k,bits);
-    vole.read_matrix_from_file(file_name);
-    file_name=".\\Ecc\\Ecc{0}_{1}.npz".format(k,w);
-    vole.read_ecc_from_file(file_name.format(k,w));
-    
-    for i in range(1,repetitions+1):
-        print("Test {0}".format(i));
-        current_times=Alice.run(vole);
-        sum_dict_into_dict(times_dic,current_times);
-        print();
-        time.sleep(5);
-    avg_dic(times_dic,repetitions);
-    print("Avarage Times:");
-    print(times_dic);
+        for i in range(1,repetitions+1):
+            print("Test {0}".format(i));
+            current_times=Alice.run(vole);
+            sum_dict_into_dict(times_dic,current_times);
+            print();
+            time.sleep(5);
+        avg_dic(times_dic,repetitions);
+        print("Avarage Times:");
+        print(times_dic);
 
 
 if __name__ == "__main__":
