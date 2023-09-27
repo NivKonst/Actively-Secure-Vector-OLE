@@ -109,7 +109,6 @@ class VOLE:
             if(d>0):
                 sampled_indices=random.sample(indices,d);
                 for index in sampled_indices:
-                    #M[i][index]=random.randint(0,self.fn-1);
                     M[i][j]=random.randint(1,self.fn-1);
         return M;
 
@@ -2174,31 +2173,6 @@ class VOLE:
 
 
 
-
-
-
-#Threading tries
-    
-    def M_mult_vector_threading(self,r):
-        M_r_list=[0]*self.m;
-        #t1=threading.Thread(target=self.M_mult_vector_thread,args=(r,0,self.m//2,M_r_list));
-        #t1.start();
-        #t2=threading.Thread(target=self.M_mult_vector_thread,args=(r,self.m//2,self.m,M_r_list));
-        #t2.start();
-        t1=threading.Thread(target=self.M_mult_vector_range,args=(r,0,self.m,M_r_list));
-        start=time.time();
-        t1.start();
-        t1.join();
-        end=time.time();
-        self.print_message_with_time("Here",start,end);
-        #t2.join();
-        if self.bits<=64:
-            M_r=np.array(M_r_list,dtype=np.ulonglong);
-        else:
-            M_r=M_r_list;
-        return M_r;
-
-
     def M_mult_vector_range(self,r,start_index,end_index,result):
         if self.bits<=64:
             r_list=r.tolist();
@@ -2380,6 +2354,29 @@ class VOLE:
 
         result=(self.factor_HL_squared*int(aHbH)+factor_HL*int(aHbL_aLbH)+int(aLbL))%self.fn;
         return result;
+
+
+
+
+#Threading trial
+    def M_mult_vector_threading(self,r):
+        M_r_list=[0]*self.m;
+        #t1=threading.Thread(target=self.M_mult_vector_thread,args=(r,0,self.m//2,M_r_list));
+        #t1.start();
+        #t2=threading.Thread(target=self.M_mult_vector_thread,args=(r,self.m//2,self.m,M_r_list));
+        #t2.start();
+        t1=threading.Thread(target=self.M_mult_vector_range,args=(r,0,self.m,M_r_list));
+        start=time.time();
+        t1.start();
+        t1.join();
+        end=time.time();
+        self.print_message_with_time("Here",start,end);
+        #t2.join();
+        if self.bits<=64:
+            M_r=np.array(M_r_list,dtype=np.ulonglong);
+        else:
+            M_r=M_r_list;
+        return M_r;
 
 
 
