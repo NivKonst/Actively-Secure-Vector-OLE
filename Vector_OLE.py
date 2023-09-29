@@ -26,20 +26,20 @@ class VOLE:
     #Initialization of a VOLE instance
     def __init__(self,k,w,bits,mu=0.25,d=10,u_factor=1.4):
         if k<=0:
-            raise Exception("k must be a positive number");
+            raise Exception("k must be a positive number.");
         if w<=0:
-            raise Exception("w must be a positive number");
+            raise Exception("w must be a positive number.");
         if mu<0 or mu>1:
-            raise Exception("μ must be a fraction between 0 and 1");
+            raise Exception("μ must be a fraction between 0 and 1.");
         if d<=0:
-            raise Exception("The number of non-zero entries in a matrix row - d, must be positive");
+            raise Exception("The number of non-zero entries in a matrix row - d, must be positive.");
         if u_factor<=1:
-            raise Exception("The top part of the matrix must be larger than k, hence u_factor should be greater than 1");
+            raise Exception("The top part of the matrix must be larger than k, hence u_factor should be greater than 1.");
         if k<d:
-            raise Exception("k should be at least the number of non-zero entries in a row - d");
+            raise Exception("k should be at least the number of non-zero entries in a row - d.");
         v=(int)(k**2);
         if v<=w:
-            raise Exception("w should be smaller than k^2");
+            raise Exception("w should be smaller than k^2.");
         self.k=k;
         self.w=w;
         self.u=(int)(u_factor*k);
@@ -69,7 +69,7 @@ class VOLE:
         elif self.bits==128:
             self.fn=fn_128;
         else:
-            raise Exception("The bits of the VOLE should be chosen from {16,32,64,128}");
+            raise Exception("The bits of the VOLE should be chosen from {16,32,64,128}.");
         self.bytes=self.bits//8;
         self.packet_size=4;
         self.factor_H=bits//2;
@@ -97,12 +97,17 @@ class VOLE:
     #Generates a random sparse matrix of dimentions rows X cols
     #with at most dmax non-zero elements in a row
     def random_dmax_sparse_matrix(self,rows,cols,dmax):
+        if rows<=0:
+            raise Exception("The number of rows must be a positive number.");
+        if cols<=0:
+            raise Exception("The number of rows must be a positive number.");
+        if dmax<=0:
+            raise Exception("The maximum number of non-zero elements must be a positive number.");
         if self.bits<=64:
             M=np.zeros((rows,cols),dtype=np.ulonglong);
         else:
             M=[[0]*cols for i in range(0,rows)];
         indices=list(range(0,cols));
-        #d_vec=np.random.choice(range(0,dmax+1),rows);
         d_vec=random.sample(range(0,dmax+1),rows);
         for i in range(0,rows):
             d=d_vec[i];
@@ -118,6 +123,12 @@ class VOLE:
 
     #Generates a random d-sparse matrix of dimentions rows X cols
     def random_d_sparse_matrix(self,rows,cols,d):
+        if rows<=0:
+            raise Exception("The number of rows must be a positive number.");
+        if cols<=0:
+            raise Exception("The number of rows must be a positive number.");
+        if d<=0:
+            raise Exception("The number of non-zero elements must be a positive number.");
         if self.bits<=64:
             M=np.zeros((rows,cols),dtype=np.ulonglong);
         else:
@@ -134,6 +145,12 @@ class VOLE:
 
     #Generates a Luby encoder represented as a matrix of ones, with dimensions code_len X info_len
     def luby_encoder(self,code_len,info_len):
+        if code_len<=0:
+            raise Exception("The length of the code words must be a positive number.");
+        if info_len<=0:
+            raise Exception("The length of the information words must be a positive number.");
+        if code_len<=info_len:
+            raise Exception("Code words must be of length greater than the information words.");
         indices=list(range(0,info_len));
         Ecc=np.zeros((code_len,info_len),dtype=np.uint8);
         dist=self.robust_soliton_distribution(info_len);
