@@ -67,7 +67,7 @@ def run(vole):
         except:
             print(".",end="");
             time.sleep(3);
-    print("");
+    print();
     print("Alice is connected to Bob");
 
 
@@ -139,13 +139,13 @@ def run(vole):
 
 
 def main():
-    k=182;
-    w=10000;
+    #k=182;
+    #w=10000;
     
-    #k=240;
-    #w=20000;
-    
-    bits=128;
+    k=240;
+    w=20000;
+
+    bits=128;    
     try:
         vole=VOLE(k,w,bits);
         if bits<=64:

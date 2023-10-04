@@ -164,7 +164,7 @@ class VOLE:
 
     #Samples a distribution by the CDF function.
     def sample_distribution_by_cdf(self,cdf):
-        rang=len(dist);
+        rang=len(cdf);
         frac=random.uniform(0, 1);
         i=0;
         while cdf[i]<=frac:
@@ -441,7 +441,10 @@ class VOLE:
     #Writes a matrix into a file
     def write_matrix_to_file(self,matrix,file_name):
         if self.bits<=64:
-            save_npz(file_name, csr_matrix(matrix));
+            try:
+                save_npz(file_name, csr_matrix(matrix));
+            except Exception as e:
+                raise e;
         else:
             rows=len(matrix);
             cols=len(matrix[0]);
@@ -455,14 +458,24 @@ class VOLE:
                 current_row_str=current_row_str[0:-1]+'\n';
                 str_to_write+=current_row_str;
             str_to_write=str_to_write[0:-1];
-            file=open(file_name+'.txt','w');
-            file.write(str_to_write);
+            try:
+                file=open(file_name+'.txt','w');
+            except Exception as e:
+                raise e;
+            try:
+                file.write(str_to_write);
+            except Exception as e:
+                file.close();
+                raise e;
             file.close();
 
 
     #Writes an Ecc matrix (matrix of only ones) into a file
     def write_ecc_to_file(self,Ecc,file_name):
-        save_npz(file_name, csr_matrix(Ecc));
+        try:
+            save_npz(file_name, csr_matrix(Ecc));
+        except Exception as e:
+            raise e;
 
     #Reads a matrix from a file and set it as the curent VOLE instance's matrix
     def read_matrix_from_file(self,file_name):
@@ -471,7 +484,9 @@ class VOLE:
                 M_csr=load_npz(file_name);
                 rows=M_csr.shape[0];
                 cols=M_csr.shape[1];
-            except FileNotFoundError as e:
+            #except FileNotFoundError as e:
+            #    raise e;
+            except Exception as e:
                 raise e;
             if rows!=self.m or cols!=self.k:
                 raise Exception("Matrix in file has wrong dimensions.");
@@ -576,7 +591,7 @@ class VOLE:
             Ecc_csr=load_npz(file_name);
             rows=Ecc_csr.shape[0];
             cols=Ecc_csr.shape[1];
-        except FileNotFoundError as e:
+        except Exception as e:
             raise e;
         if rows!=self.v or cols!=self.w:
             raise Exception("Ecc in file has wrong dimensions.");
