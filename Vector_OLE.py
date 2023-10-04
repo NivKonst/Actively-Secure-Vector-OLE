@@ -155,19 +155,19 @@ class VOLE:
         Ecc=np.zeros((code_len,info_len),dtype=np.uint8);
         dist=self.robust_soliton_distribution(info_len);
         for i in range(0,code_len):
-            deg=self.sample_by_distribution(dist);
+            deg=self.sample_distribution_by_cdf(dist);
             sampled_indices=random.sample(indices,deg);
             for index in sampled_indices:
                 Ecc[i,index]=1;
         return Ecc;
 
 
-    #Samples a distribution
-    def sample_by_distribution(self,dist):
+    #Samples a distribution by the CDF function.
+    def sample_distribution_by_cdf(self,cdf):
         rang=len(dist);
         frac=random.uniform(0, 1);
         i=0;
-        while dist[i]<=frac:
+        while cdf[i]<=frac:
             i+=1;
         return i+1;
 
