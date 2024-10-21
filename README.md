@@ -9,7 +9,9 @@ We present a Python implementation and suggest several practical and theoretical
 More details about our work can be found at:
 
 https://eprint.iacr.org/2023/270
+
 https://www.iacr.org/cryptodb/data/paper.php?pubkey=33002
+
 https://link.springer.com/chapter/10.1007/978-3-031-30617-4_7
 
 A presentation of our work from the Eurocrypt conference of 2023 at Lyon, France can be found at: https://www.youtube.com/watch?v=Aq_btPAt1T4&t=1426s
